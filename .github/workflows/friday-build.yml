@@ -1,17 +1,5 @@
-name: FRIDAY Build
-
-on:
-  push:
-    branches: [main]
-  pull_request:
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
       - name: Build FRIDAY Docker image
         run: docker build -t friday-ai-agent .
+
+      - name: Test FRIDAY container
+        run: docker run --rm friday-ai-agent
