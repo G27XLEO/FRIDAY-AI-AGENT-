@@ -27,6 +27,10 @@ jobs:
         working-directory: android
         run: find . -maxdepth 6 -type f | sort
 
+      - name: Show Android dependency report
+        working-directory: android
+        run: gradle :app:dependencies --configuration debugRuntimeClasspath
+
       - name: Build Android APK
         working-directory: android
         run: gradle assembleDebug --stacktrace --info --warning-mode all
