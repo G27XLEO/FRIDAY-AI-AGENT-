@@ -29,4 +29,4 @@ jobs:
 
       - name: Build Android APK
         working-directory: android
-        run: gradle assembleDebug --stacktrace --info
+        run: gradle assembleDebug --stacktrace --info --warning-mode all
