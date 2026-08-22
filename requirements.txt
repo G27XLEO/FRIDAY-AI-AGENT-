@@ -1,5 +1,6 @@
-livekit-agents[groq,elevenlabs,silero,turn-detector]~=1.2
+livekit-agents[groq,openai,elevenlabs,silero,turn-detector]~=1.2
 livekit-plugins-groq~=1.2
+livekit-plugins-openai~=1.2
 livekit-plugins-elevenlabs~=1.2
 livekit-plugins-silero~=1.2
 livekit-plugins-turn-detector~=1.2
