@@ -45,13 +45,6 @@ class FridayConfig:
             "and ask short clarifying questions only when truly blocked."
         ),
     )
-    # OmniRoute exposes an OpenAI-compatible endpoint. Keep these configurable so the
-    # same FRIDAY image can use a local Android/Termux server or a remote OmniRoute host.
-    omniroute_base_url: str = os.getenv("OMNIROUTE_BASE_URL", "http://127.0.0.1:20128/v1")
-    omniroute_api_key: str = os.getenv("OMNIROUTE_API_KEY", "")
-    omniroute_model: str = os.getenv("OMNIROUTE_MODEL", "auto")
-    use_omniroute: bool = os.getenv("USE_OMNIROUTE", "true").lower() in {"1", "true", "yes", "on"}
-
     groq_llm_model: str = os.getenv("GROQ_LLM_MODEL", "llama-3.3-70b-versatile")
     groq_stt_model: str = os.getenv("GROQ_STT_MODEL", "whisper-large-v3-turbo")
     elevenlabs_voice: str = os.getenv(
