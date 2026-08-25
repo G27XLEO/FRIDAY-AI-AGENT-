@@ -1,0 +1,9 @@
+.git
+.github
+android
+.venv
+__pycache__
+*.pyc
+.env
+.run
+tests
