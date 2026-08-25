@@ -14,18 +14,19 @@ jobs:
       LIVEKIT_API_SECRET: ${{ secrets.LIVEKIT_API_SECRET }}
       GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
       ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+      FRIDAY_VALIDATE_RUNTIME_ENV: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && '1' || '0' }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Build LiveKit worker image
-        run: docker build -t friday-ai-agent:ci .
+        run: docker build --pull -t friday-ai-agent:ci .
 
       - name: Validate image
         run: docker image inspect friday-ai-agent:ci
 
-      - name: Validate required environment
+      - name: Validate test suite
         run: |
           docker run --rm \
             -e LIVEKIT_URL \
@@ -33,5 +34,6 @@ jobs:
             -e LIVEKIT_API_SECRET \
             -e GROQ_API_KEY \
             -e ELEVENLABS_API_KEY \
+            -e FRIDAY_VALIDATE_RUNTIME_ENV \
             friday-ai-agent:ci \
             python -m unittest discover -s tests -p 'test_*.py' -v
