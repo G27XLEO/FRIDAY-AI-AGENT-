@@ -8,6 +8,13 @@ on:
 jobs:
   livekit-worker:
     runs-on: ubuntu-latest
+    env:
+      LIVEKIT_URL: ${{ secrets.LIVEKIT_URL }}
+      LIVEKIT_API_KEY: ${{ secrets.LIVEKIT_API_KEY }}
+      LIVEKIT_API_SECRET: ${{ secrets.LIVEKIT_API_SECRET }}
+      GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+      ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -18,6 +25,13 @@ jobs:
       - name: Validate image
         run: docker image inspect friday-ai-agent:ci
 
-      - name: Run Python tests
+      - name: Validate required environment
         run: |
-          docker run --rm friday-ai-agent:ci python -m unittest discover -v
+          docker run --rm \
+            -e LIVEKIT_URL \
+            -e LIVEKIT_API_KEY \
+            -e LIVEKIT_API_SECRET \
+            -e GROQ_API_KEY \
+            -e ELEVENLABS_API_KEY \
+            friday-ai-agent:ci \
+            python -m unittest discover -s tests -p 'test_*.py' -v
