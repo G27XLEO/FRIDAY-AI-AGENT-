@@ -1,10 +1,14 @@
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 from mcp.server.fastmcp import FastMCP
 
 from friday_agent import mcp_tools
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
+logger = logging.getLogger("friday_agent.mcp_server")
 
 mcp = FastMCP(
     "friday-custom-mcp",
@@ -64,6 +68,12 @@ def write_workspace_file(path: str, content: str, overwrite: bool = False) -> di
 
 
 @mcp.tool()
+def list_workspace_files(path: str = ".", max_entries: int = 200) -> dict[str, Any]:
+    """List files and directories under a workspace-relative path."""
+    return mcp_tools.list_workspace_files(path, max_entries).to_dict()
+
+
+@mcp.tool()
 def remember(key: str, value: Any) -> dict[str, Any]:
     """Persist a JSON-serializable memory item for later recall."""
     return mcp_tools.remember(key, value).to_dict()
@@ -82,4 +92,5 @@ def plan_task(goal: str, constraints: list[str] | None = None) -> dict[str, Any]
 
 
 if __name__ == "__main__":
+    logger.info("Starting FRIDAY MCP server (workspace root: %s)", mcp_tools.WORKSPACE_ROOT)
     mcp.run(transport="streamable-http")
