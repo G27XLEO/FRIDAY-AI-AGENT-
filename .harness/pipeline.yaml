@@ -1,0 +1,82 @@
+pipeline:
+  name: FRIDAY AI Agent CI/CD
+  identifier: friday_ai_agent_ci_cd
+  projectIdentifier: FRIDAY
+  orgIdentifier: default
+  tags: {}
+  stages:
+    - stage:
+        name: Build and Test
+        identifier: build_and_test
+        type: CI
+        spec:
+          cloneCodebase: true
+          infrastructure:
+            type: KubernetesDirect
+            spec:
+              connectorRef: account.harnessImage
+              namespace: harness-delegate-ng
+              automountServiceAccountToken: true
+              nodeSelector: {}
+              os: Linux
+          execution:
+            steps:
+              - step:
+                  type: Run
+                  name: Validate Python
+                  identifier: validate_python
+                  spec:
+                    shell: Bash
+                    command: |-
+                      python --version
+                      python -m compileall -q friday_agent tests
+                      python -m pip install --upgrade pip
+                      python -m pip install -r requirements.txt
+              - step:
+                  type: Run
+                  name: Run Tests
+                  identifier: run_tests
+                  spec:
+                    shell: Bash
+                    command: |-
+                      if [ -d tests ] && find tests -type f -name 'test_*.py' -print -quit | grep -q .; then
+                        python -m pytest -q
+                      else
+                        echo "No pytest test files found; compile validation passed."
+                      fi
+    - stage:
+        name: Docker Build
+        identifier: docker_build
+        type: CI
+        spec:
+          cloneCodebase: true
+          infrastructure:
+            type: KubernetesDirect
+            spec:
+              connectorRef: account.harnessImage
+              namespace: harness-delegate-ng
+              automountServiceAccountToken: true
+              nodeSelector: {}
+              os: Linux
+          execution:
+            steps:
+              - step:
+                  type: BuildAndPushDockerRegistry
+                  name: Build and Push FRIDAY Image
+                  identifier: build_push_friday
+                  spec:
+                    connectorRef: account.harnessImage
+                    repo: friday-ai-agent
+                    tags:
+                      - <+pipeline.sequenceId>
+                      - latest
+                    dockerfile: Dockerfile
+                    context: .
+                    caching: true
+  properties:
+    ci:
+      codebase:
+        connectorRef: github_friday
+        repoName: G27XLEO/FRIDAY-AI-AGENT-
+        build: <+input>
+        sparseCheckout: []
