@@ -1,21 +1,23 @@
-name: FRIDAY Build
+name: FRIDAY LiveKit Worker
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
   pull_request:
 
 jobs:
-  build:
+  livekit-worker:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Build FRIDAY Docker image
-        run: docker build -t friday-ai-agent .
+      - name: Build LiveKit worker image
+        run: docker build -t friday-ai-agent:ci .
 
-      - name: Check Docker image
-        run: docker image inspect friday-ai-agent
+      - name: Validate image
+        run: docker image inspect friday-ai-agent:ci
+
+      - name: Run Python tests
+        run: |
+          docker run --rm friday-ai-agent:ci python -m unittest discover -v
