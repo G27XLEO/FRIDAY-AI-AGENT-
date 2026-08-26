@@ -14,7 +14,6 @@ jobs:
       LIVEKIT_API_SECRET: ${{ secrets.LIVEKIT_API_SECRET }}
       GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
       ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
-      # Unit tests must stay runnable on forks/PRs where secrets are unavailable.
       FRIDAY_VALIDATE_RUNTIME_ENV: '0'
 
     steps:
@@ -34,39 +33,21 @@ jobs:
             friday-ai-agent:ci \
             python -m unittest discover -s tests -p 'test_*.py' -v
 
-  runtime-secrets:
-    name: Validate protected runtime secrets
-    if: >-
-      github.event_name == 'push' && github.ref == 'refs/heads/main' &&
-      secrets.LIVEKIT_URL != '' &&
-      secrets.LIVEKIT_API_KEY != '' &&
-      secrets.LIVEKIT_API_SECRET != '' &&
-      secrets.GROQ_API_KEY != '' &&
-      secrets.ELEVENLABS_API_KEY != ''
-    runs-on: ubuntu-latest
-    env:
-      LIVEKIT_URL: ${{ secrets.LIVEKIT_URL }}
-      LIVEKIT_API_KEY: ${{ secrets.LIVEKIT_API_KEY }}
-      LIVEKIT_API_SECRET: ${{ secrets.LIVEKIT_API_SECRET }}
-      GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-      ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
-      FRIDAY_VALIDATE_RUNTIME_ENV: '1'
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Build LiveKit worker image for runtime validation
-        run: docker build --pull -t friday-ai-agent:runtime-check .
-
-      - name: Validate configured runtime environment
+      - name: Validate protected runtime secrets when configured
+        shell: bash
         run: |
+          if [[ -z "$LIVEKIT_URL" || -z "$LIVEKIT_API_KEY" || -z "$LIVEKIT_API_SECRET" || -z "$GROQ_API_KEY" || -z "$ELEVENLABS_API_KEY" ]]; then
+            echo "Runtime secrets are not configured in this workflow context; skipping secret-value validation."
+            echo "Unit tests remain fully validated. Configure GitHub Secrets to enable protected runtime validation."
+            exit 0
+          fi
+
           docker run --rm \
             -e LIVEKIT_URL \
             -e LIVEKIT_API_KEY \
             -e LIVEKIT_API_SECRET \
             -e GROQ_API_KEY \
             -e ELEVENLABS_API_KEY \
-            -e FRIDAY_VALIDATE_RUNTIME_ENV \
-            friday-ai-agent:runtime-check \
+            -e FRIDAY_VALIDATE_RUNTIME_ENV=1 \
+            friday-ai-agent:ci \
             python -m unittest tests.test_env -v
