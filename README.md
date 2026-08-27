@@ -2,45 +2,66 @@
 
 A production-oriented realtime voice agent built around **LiveKit Agents**, **Groq**, **ElevenLabs**, **Silero VAD**, turn detection, and a custom **MCP server**.
 
-FRIDAY is designed as a mission-control style assistant: concise, proactive, technically precise, calm under pressure, and suitable for voice-first operation.
+FRIDAY is a cross-platform, voice-first mission-control assistant: concise, proactive, technically precise, calm under pressure, and suitable for local development or server deployment.
 
 > **Security:** Never commit API keys, LiveKit credentials, OAuth tokens, or other secrets. Use `.env` locally and GitHub Actions Secrets for CI/CD.
 
 ## Current status
 
-- **Runtime:** LiveKit voice worker
+- **Runtime:** LiveKit voice worker + optional MCP server
 - **AI:** Groq STT + LLM
 - **Voice:** ElevenLabs TTS
 - **Audio:** Silero VAD + turn detection
 - **Tools:** Custom MCP server with workspace, command, URL, memory, status, and planning tools
 - **Container:** Docker / Python 3.12
+- **Development hosts:** Linux, macOS, Windows, WSL, and Android/Termux
+- **Server deployment:** Docker or any supported Linux/Python host
 - **CI:** GitHub Actions builds and validates the worker image
-- **Android app:** Not included; this repository intentionally deploys the LiveKit worker
-- **Publishing:** Release/deployment is intentionally a separate later step
+- **Native mobile UI:** Not required by the worker architecture; clients can connect through LiveKit
+- **Publishing:** Release/deployment remains a separate later step
+
+## UI demo snapshot
+
+The repository includes a review-only UI concept showing the intended FRIDAY mission-control experience. It is a static design reference and is **not** a claim that a production dashboard is already deployed.
+
+![FRIDAY UI demo snapshot](docs/assets/friday-ui-demo.svg)
+
+See `docs/UI_DEMO.md` for the design notes and component map.
 
 ## Architecture
 
 ```text
-Voice Client
-     │
-     ▼
-  LiveKit Cloud
-     │
-     ▼
-FRIDAY LiveKit Worker
-     ├── Groq STT ──────────► speech recognition
-     ├── Groq LLM ──────────► reasoning / responses
-     ├── Silero VAD ────────► voice activity detection
-     ├── Turn Detector ─────► conversation turn handling
-     ├── ElevenLabs TTS ────► voice output
-     │
-     └── MCP Server
-          ├── system status
-          ├── URL fetching
-          ├── safe shell commands
-          ├── workspace files
-          ├── memory
-          └── task planning
+┌─────────────────────────────────────────────────────────┐
+│                    FRIDAY CLIENTS                       │
+│  Web │ Android │ iOS │ Desktop │ Termux │ CLI/Agents   │
+└──────────────────────────┬──────────────────────────────┘
+                           │ LiveKit
+                           ▼
+                 ┌──────────────────────┐
+                 │  LiveKit Cloud/Self  │
+                 └──────────┬───────────┘
+                            │
+                            ▼
+                 ┌──────────────────────┐
+                 │ FRIDAY LiveKit Worker│
+                 ├──────────────────────┤
+                 │ Groq STT             │
+                 │ Groq LLM             │
+                 │ Silero VAD           │
+                 │ Turn Detector        │
+                 │ ElevenLabs TTS       │
+                 └──────────┬───────────┘
+                            │
+                            ▼
+                 ┌──────────────────────┐
+                 │     FRIDAY MCP       │
+                 ├──────────────────────┤
+                 │ Status / URL         │
+                 │ Safe shell           │
+                 │ Workspace files      │
+                 │ Memory               │
+                 │ Planning             │
+                 └──────────────────────┘
 ```
 
 ## Features
@@ -63,16 +84,35 @@ FRIDAY LiveKit Worker
 | Planning | `plan_task` | Compact execution plans |
 | Operator prompt | `friday_operator_prompt` | Standardized mission prompt |
 
-### God's Eye View integration
+## Cross-platform support
 
-The optional `FRIDAY_GODS_EYE_VIEW_URL` setting can point FRIDAY at a deployed God's Eye View web console. The integration is optional and should not prevent the core voice worker from starting.
+FRIDAY is a **Python/LiveKit worker**, so the development and client environment can be separated from the production worker.
+
+| Platform | Development | Worker | Recommended path |
+| --- | --- | --- | --- |
+| Linux | ✅ | ✅ | Python or Docker |
+| macOS | ✅ | ✅ | Python or Docker |
+| Windows | ✅ | ⚠️ | WSL2 or Docker recommended |
+| WSL2 | ✅ | ✅ | Python or Docker |
+| Android / Termux | ✅ | ⚠️ | Termux for development; Docker/server for worker |
+| Web | Client | N/A | LiveKit web client |
+| iOS | Client | N/A | LiveKit client app |
+| Docker hosts | N/A | ✅ | Recommended production runtime |
+
+The table distinguishes **development/host support** from **native client support**. The core repository is not a native Android/iOS application.
 
 ## Repository layout
 
 ```text
 .
 ├── .github/workflows/friday-build.yml  # CI validation
-├── docs/                               # Architecture, deployment and release docs
+├── docs/
+│   ├── ARCHITECTURE.md                # System architecture
+│   ├── DEPLOYMENT.md                  # Deployment paths
+│   ├── INSTALL.md                     # Platform install commands
+│   ├── RELEASE.md                     # Future publishing/release process
+│   ├── UI_DEMO.md                     # UI review notes
+│   └── assets/friday-ui-demo.svg      # Static UI demo snapshot
 ├── friday_agent/
 │   ├── livekit_agent.py                # Realtime voice worker
 │   ├── mcp_server.py                   # MCP HTTP server
@@ -119,34 +159,65 @@ Copy `.env.example` to `.env` and fill in your own credentials.
 | `FRIDAY_ALLOWED_COMMANDS` | `pwd,python,python3,git,find,rg,cat` | Shell allow-list |
 | `FRIDAY_MAX_TEXT_CHARS` | `6000` | Output size limit |
 | `FRIDAY_MAX_WRITE_BYTES` | `1000000` | File-write size limit |
-| `FRIDAY_GODS_EYE_VIEW_URL` | Empty | Optional web console |
 
-## Local setup
+## Install on any supported development platform
 
-Python 3.12 is the project target.
+The complete platform command reference is in `docs/INSTALL.md`.
+
+### Linux / macOS / WSL2
 
 ```bash
-python -m venv .venv
+git clone https://github.com/G27XLEO/FRIDAY-AI-AGENT-.git
+cd FRIDAY-AI-AGENT-
+python3 -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
 cp .env.example .env
-# Edit .env with your credentials.
-set -a && source .env && set +a
 ```
 
-### Start the MCP server
+### Windows PowerShell
+
+```powershell
+git clone https://github.com/G27XLEO/FRIDAY-AI-AGENT-.git
+Set-Location FRIDAY-AI-AGENT-
+py -3.12 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+Copy-Item .env.example .env
+```
+
+### Android / Termux
+
+```bash
+pkg update -y
+pkg install -y git python
+pkg install -y clang make pkg-config
+
+git clone https://github.com/G27XLEO/FRIDAY-AI-AGENT-.git
+cd FRIDAY-AI-AGENT-
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
+cp .env.example .env
+```
+
+If a native Python dependency is unavailable on a particular Android/Termux build, use Termux as the control/development environment and run the LiveKit worker in Docker or on a Linux server.
+
+## Start FRIDAY
+
+### MCP server
 
 ```bash
 python -m friday_agent.mcp_server
 ```
 
-### Start the LiveKit worker
+### LiveKit worker
 
 ```bash
 python -m friday_agent.livekit_agent dev
 ```
 
-### Start both locally
+### Both locally
 
 ```bash
 ./scripts/run_background.sh
@@ -154,9 +225,7 @@ python -m friday_agent.livekit_agent dev
 
 The runner stores runtime logs and PIDs under `.run/`.
 
-## Docker deployment
-
-The Docker image uses Python 3.12, installs the LiveKit dependencies, downloads required LiveKit model files during image build, compiles the application, and runs as a non-root `friday` user.
+## Docker
 
 Build:
 
@@ -164,7 +233,7 @@ Build:
 docker build --pull -t friday-ai-agent .
 ```
 
-Run with an environment file:
+Run:
 
 ```bash
 docker run --rm --env-file .env friday-ai-agent
@@ -174,13 +243,7 @@ For production, inject secrets through the hosting platform's secret manager rat
 
 ## GitHub Actions / CI
 
-`.github/workflows/friday-build.yml` runs on pushes to `main` and pull requests. It:
-
-1. Checks out the repository.
-2. Builds the Docker image.
-3. Inspects the image.
-4. Runs the unit-test suite inside the image.
-5. Runs protected runtime environment validation when the required GitHub Secrets are configured.
+`.github/workflows/friday-build.yml` runs on pushes to `main` and pull requests. It builds the Docker image, inspects it, runs the unit tests inside the image, and performs protected runtime environment validation when GitHub Secrets are configured.
 
 Required GitHub Actions Secrets:
 
@@ -192,11 +255,7 @@ GROQ_API_KEY
 ELEVENLABS_API_KEY
 ```
 
-Do not place secret values in workflow YAML or committed files.
-
 ## Testing
-
-Run the local checks before deployment:
 
 ```bash
 python -m unittest discover -v
@@ -205,70 +264,30 @@ git diff --check
 docker build --pull -t friday-ai-agent .
 ```
 
-## Security model
+## Security
 
-FRIDAY's MCP shell access is intentionally allow-listed. File operations are constrained to the configured workspace root, and output/write limits reduce accidental resource consumption.
+- Never commit secrets.
+- Rotate credentials that were previously exposed.
+- Keep MCP shell access allow-listed.
+- Keep file operations inside a trusted workspace.
+- Run production containers as non-root.
+- Protect any publicly exposed MCP endpoint with authentication and transport controls.
+- Treat voice credentials and third-party service tokens as production secrets.
 
-For production:
+## Publishing later
 
-- Store secrets in a secret manager.
-- Rotate credentials if they were ever committed or exposed.
-- Keep the shell allow-list minimal.
-- Use a dedicated workspace for MCP operations.
-- Run the container as a non-root user.
-- Restrict network access where practical.
-- Do not expose the MCP endpoint publicly without authentication and transport controls.
-
-## Termux / Android development
-
-The project can be developed from Termux, but the runtime architecture is **server/worker-first**. The repository does not build an Android application. A phone can act as the development/operator environment while the LiveKit worker runs in Docker or another supported server environment.
-
-See `docs/DEPLOYMENT.md` for the recommended development and production paths.
-
-## Publishing and release plan
-
-Publishing is intentionally **not performed as part of this documentation update**.
-
-When FRIDAY is ready to publish, the recommended sequence is:
-
-1. Verify secrets are absent from tracked files and repository history where applicable.
-2. Run unit, compile, Docker, and environment validation checks.
-3. Build and tag an immutable container image.
-4. Push the image to the selected container registry.
-5. Configure production secrets in the deployment platform.
-6. Deploy the LiveKit worker.
-7. Verify LiveKit connectivity, STT, LLM, TTS, MCP tools, logs, and health.
-8. Create a versioned GitHub release and changelog.
-9. Publish only after the production smoke test passes.
-
-See `docs/RELEASE.md` for the release checklist.
+Publishing is **not performed by this update**. When ready, use the release gates in `docs/RELEASE.md`: security review → tests → immutable container build → registry push → production secrets → deployment → smoke test → versioned GitHub release.
 
 ## Roadmap
 
-### Near term
-
 - Harden MCP authentication and authorization.
-- Improve runtime health/status reporting.
-- Add stronger environment validation and startup diagnostics.
-- Improve voice latency and audio reliability.
-- Expand automated CI coverage.
-
-### Mid term
-
-- Production container registry workflow.
-- Automated versioning and release artifacts.
-- More connector/tool integrations through MCP.
-- Better memory and task-state management.
-- God's Eye View production integration.
-
-### Long term
-
-- Universal connector/tool registry.
-- Permission-aware automation layer.
-- Multi-service orchestration.
-- Reliable background tasks and event-driven automation.
-- Production-grade observability and audit trails.
+- Improve health/status reporting and startup diagnostics.
+- Reduce voice latency and improve audio reliability.
+- Add more MCP connectors and permission-aware automation.
+- Add production container registry and release automation.
+- Expand client integrations for web, Android, iOS, desktop, and terminal workflows.
+- Add production observability, audit trails, and task-state management.
 
 ## License / usage
 
-Review the repository's license and third-party service terms before public distribution. Use only voices, credentials, models, and integrations that you are authorized to use.
+Review the repository license and third-party service terms before public distribution. Use only voices, credentials, models, and integrations that you are authorized to use.
