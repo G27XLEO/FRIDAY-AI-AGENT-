@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900" role="img" aria-labelledby="title desc">
+  <title id="title">FRIDAY Mission Control UI Demo</title>
+  <desc id="desc">Static concept snapshot of a dark FRIDAY operator console.</desc>
+  <rect width="1440" height="900" fill="#080b12"/>
+  <rect x="28" y="24" width="1384" height="72" rx="16" fill="#111722" stroke="#273246"/>
+  <circle cx="62" cy="60" r="12" fill="#62e6a6"/>
+  <text x="88" y="58" fill="#f3f6fb" font-family="Arial, sans-serif" font-size="24" font-weight="700">FRIDAY</text>
+  <text x="88" y="79" fill="#7f8da3" font-family="Arial, sans-serif" font-size="12">MISSION CONTROL / OPERATOR CONSOLE</text>
+  <text x="1180" y="58" fill="#62e6a6" font-family="Arial, sans-serif" font-size="14">● LIVEKIT ONLINE</text>
+  <text x="1180" y="78" fill="#7f8da3" font-family="Arial, sans-serif" font-size="12">SESSION: ACTIVE</text>
+
+  <rect x="28" y="118" width="870" height="330" rx="18" fill="#0e141f" stroke="#273246"/>
+  <text x="54" y="154" fill="#9eacc0" font-family="Arial, sans-serif" font-size="13">VOICE INTERFACE</text>
+  <text x="54" y="196" fill="#f3f6fb" font-family="Arial, sans-serif" font-size="30" font-weight="700">Good evening, Boss.</text>
+  <text x="54" y="228" fill="#8d9bb0" font-family="Arial, sans-serif" font-size="16">All realtime systems are standing by.</text>
+  <circle cx="462" cy="330" r="68" fill="#121b2a" stroke="#4e6382" stroke-width="2"/>
+  <circle cx="462" cy="330" r="48" fill="none" stroke="#62e6a6" stroke-width="3" opacity="0.85"/>
+  <path d="M430 330 Q446 300 462 330 T494 330" fill="none" stroke="#62e6a6" stroke-width="4"/>
+  <text x="417" y="425" fill="#62e6a6" font-family="Arial, sans-serif" font-size="13">LISTENING</text>
+
+  <rect x="922" y="118" width="490" height="330" rx="18" fill="#0e141f" stroke="#273246"/>
+  <text x="948" y="154" fill="#9eacc0" font-family="Arial, sans-serif" font-size="13">SYSTEM STATUS</text>
+  <text x="948" y="194" fill="#f3f6fb" font-family="Arial, sans-serif" font-size="17">LiveKit</text><text x="1300" y="194" fill="#62e6a6" font-family="Arial, sans-serif" font-size="14">ONLINE</text>
+  <text x="948" y="236" fill="#f3f6fb" font-family="Arial, sans-serif" font-size="17">Groq STT / LLM</text><text x="1300" y="236" fill="#62e6a6" font-family="Arial, sans-serif" font-size="14">READY</text>
+  <text x="948" y="278" fill="#f3f6fb" font-family="Arial, sans-serif" font-size="17">ElevenLabs TTS</text><text x="1300" y="278" fill="#62e6a6" font-family="Arial, sans-serif" font-size="14">READY</text>
+  <text x="948" y="320" fill="#f3f6fb" font-family="Arial, sans-serif" font-size="17">MCP</text><text x="1300" y="320" fill="#62e6a6" font-family="Arial, sans-serif" font-size="14">READY</text>
+  <text x="948" y="362" fill="#f3f6fb" font-family="Arial, sans-serif" font-size="17">Worker</text><text x="1300" y="362" fill="#62e6a6" font-family="Arial, sans-serif" font-size="14">HEALTHY</text>
+  <line x1="948" y1="390" x2="1386" y2="390" stroke="#273246"/>
+  <text x="948" y="420" fill="#7f8da3" font-family="Arial, sans-serif" font-size="12">LATENCY  184 ms     CPU  18%     MEMORY  412 MB</text>
+
+  <rect x="28" y="474" width="650" height="392" rx="18" fill="#0e141f" stroke="#273246"/>
+  <text x="54" y="510" fill="#9eacc0" font-family="Arial, sans-serif" font-size="13">ACTIVE MISSION</text>
+  <text x="54" y="550" fill="#f3f6fb" font-family="Arial, sans-serif" font-size="22" font-weight="700">Prepare deployment diagnostics</text>
+  <rect x="54" y="575" width="590" height="8" rx="4" fill="#1d2737"/>
+  <rect x="54" y="575" width="383" height="8" rx="4" fill="#62e6a6"/>
+  <text x="54" y="610" fill="#62e6a6" font-family="Arial, sans-serif" font-size="13">65% COMPLETE</text>
+  <text x="54" y="652" fill="#d7deea" font-family="Arial, sans-serif" font-size="14">✓ Environment validation</text>
+  <text x="54" y="684" fill="#d7deea" font-family="Arial, sans-serif" font-size="14">✓ MCP connectivity</text>
+  <text x="54" y="716" fill="#d7deea" font-family="Arial, sans-serif" font-size="14">→ Docker smoke test</text>
+  <text x="54" y="748" fill="#6f7e94" font-family="Arial, sans-serif" font-size="14">○ Production release</text>
+  <text x="54" y="820" fill="#6f7e94" font-family="Arial, sans-serif" font-size="12">NEXT ACTION: validate worker health endpoint</text>
+
+  <rect x="702" y="474" width="710" height="392" rx="18" fill="#0e141f" stroke="#273246"/>
+  <text x="728" y="510" fill="#9eacc0" font-family="Arial, sans-serif" font-size="13">MCP TOOL TIMELINE</text>
+  <circle cx="736" cy="554" r="5" fill="#62e6a6"/><text x="754" y="559" fill="#d7deea" font-family="monospace" font-size="14">system_status</text><text x="1240" y="559" fill="#6f7e94" font-family="monospace" font-size="12">19:42:08</text>
+  <circle cx="736" cy="606" r="5" fill="#62e6a6"/><text x="754" y="611" fill="#d7deea" font-family="monospace" font-size="14">plan_task</text><text x="1240" y="611" fill="#6f7e94" font-family="monospace" font-size="12">19:42:11</text>
+  <circle cx="736" cy="658" r="5" fill="#62e6a6"/><text x="754" y="663" fill="#d7deea" font-family="monospace" font-size="14">run_shell: python -m unittest</text><text x="1240" y="663" fill="#6f7e94" font-family="monospace" font-size="12">19:42:15</text>
+  <circle cx="736" cy="710" r="5" fill="#62e6a6"/><text x="754" y="715" fill="#d7deea" font-family="monospace" font-size="14">read_workspace_file</text><text x="1240" y="715" fill="#6f7e94" font-family="monospace" font-size="12">19:42:18</text>
+  <line x1="736" y1="730" x2="736" y2="792" stroke="#344157" stroke-width="2"/>
+  <text x="754" y="760" fill="#7f8da3" font-family="Arial, sans-serif" font-size="13">Awaiting operator instruction…</text>
+  <rect x="728" y="802" width="650" height="36" rx="10" fill="#111a28" stroke="#344157"/>
+  <text x="746" y="826" fill="#65748b" font-family="monospace" font-size="13">Type a command or use voice…</text>
+</svg>
