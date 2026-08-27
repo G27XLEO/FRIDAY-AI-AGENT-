@@ -5,7 +5,7 @@ from typing import Any
 
 from mcp.server.fastmcp import FastMCP
 
-from friday_agent import gods_eye_view, mcp_tools
+from friday_agent import mcp_tools
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 logger = logging.getLogger("friday_agent.mcp_server")
@@ -16,7 +16,7 @@ mcp = FastMCP(
         "Custom FRIDAY MCP server for realtime agent orchestration. "
         "Use these tools to inspect runtime state, read/write trusted workspace files, "
         "fetch user-approved public URLs, execute allow-listed local commands, remember facts, "
-        "produce compact plans, and inspect the optional God's Eye View geospatial module."
+        "and produce compact plans."
     ),
 )
 
@@ -25,12 +25,6 @@ mcp = FastMCP(
 def status_resource() -> dict[str, Any]:
     """Expose current FRIDAY server status as a resource."""
     return mcp_tools.system_status()
-
-
-@mcp.resource("friday://gods-eye-view")
-def gods_eye_view_resource() -> dict[str, Any]:
-    """Expose the God's Eye View capability manifest as a resource."""
-    return gods_eye_view.feature_manifest()
 
 
 @mcp.prompt()
@@ -47,18 +41,6 @@ def friday_operator_prompt(mission: str) -> str:
 def system_status() -> dict[str, Any]:
     """Return local runtime status for orchestration decisions."""
     return mcp_tools.system_status()
-
-
-@mcp.tool()
-def gods_eye_view_manifest() -> dict[str, Any]:
-    """Return God's Eye View capabilities and configuration state."""
-    return gods_eye_view.feature_manifest()
-
-
-@mcp.tool()
-async def gods_eye_view_health(timeout_seconds: float = 5.0) -> dict[str, Any]:
-    """Check the configured God's Eye View endpoint without affecting FRIDAY startup."""
-    return (await gods_eye_view.health_check(timeout_seconds)).to_dict()
 
 
 @mcp.tool()
