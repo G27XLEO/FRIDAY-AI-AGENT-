@@ -9,19 +9,9 @@ log() { printf '\n[FRIDAY UI] %s\n' "$1"; }
 command -v python >/dev/null 2>&1 || { echo "Python is required. Install it with: pkg install python"; exit 1; }
 command -v npm >/dev/null 2>&1 || { echo "Node.js/npm is required. Install it with: pkg install nodejs"; exit 1; }
 
-if [ ! -d .venv ]; then
-  log "Creating Python virtual environment"
-  python -m venv .venv
-fi
+PYTHON=python
 
-# Termux may not provide a venv pip module in some installations; use the active Python pip when needed.
-if [ -x .venv/bin/python ]; then
-  PYTHON=.venv/bin/python
-else
-  PYTHON=python
-fi
-
-log "Installing/updating Python dependencies"
+log "Installing Python dependencies"
 "$PYTHON" -m pip install -r requirements.txt
 
 if [ ! -d web/node_modules ]; then
@@ -46,8 +36,14 @@ else
   sleep 2
 fi
 
+if ! kill -0 "$(cat .run/ui.pid)" 2>/dev/null; then
+  echo "FRIDAY UI failed to start. Check .run/ui.log"
+  cat .run/ui.log
+  exit 1
+fi
+
 log "FRIDAY UI is ready"
 echo "Local:   http://127.0.0.1:8001"
 echo "Android: open http://127.0.0.1:8001 in your browser"
 echo "Logs:    .run/ui.log"
-echo "Stop:    kill $(cat .run/ui.pid 2>/dev/null || echo '<pid>')"
+echo "Stop:    kill $(cat .run/ui.pid)"
