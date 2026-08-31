@@ -1,5 +1,11 @@
 # FRIDAY Deployment Guide
 
+## Scope
+
+FRIDAY is a software-only realtime voice assistant. It does not require or include Raspberry Pi, GPIO, microcontrollers, sensors, MQTT home automation, Bluetooth/BLE device control, or other physical hardware integrations.
+
+The supplied JARVIS-style reference separates hardware/IoT from the main voice-assistant software pipeline. FRIDAY intentionally does not implement that optional hardware layer. fileciteturn0file0L72-L83
+
 ## 1. Development
 
 Recommended local sequence:
@@ -99,6 +105,7 @@ Before accepting traffic, verify:
 - Shell execution is restricted to the allow-list.
 - Logs contain no API keys or secrets.
 - Container runs without root privileges.
+- No physical hardware is required for the deployment.
 
 ## 6. Termux / Android
 
@@ -114,13 +121,9 @@ pip install -r requirements.txt
 cp .env.example .env
 ```
 
-For production, move the worker to a supported server/container environment and use the Android device as the voice/operator client where appropriate.
+For production, move the worker to a supported server/container environment and use the Android device as the voice/operator client where appropriate. The Android device is a software endpoint, not a required home-control hub.
 
-## 7. God's Eye View
-
-Set `FRIDAY_GODS_EYE_VIEW_URL` only when a deployed God's Eye View console is available. Keep the value empty for deployments that do not use the feature.
-
-## 8. Secrets incident response
+## 7. Secrets incident response
 
 If a credential is ever committed:
 
