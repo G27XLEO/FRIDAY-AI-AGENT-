@@ -6,6 +6,7 @@ from livekit.agents import Agent, AgentSession, JobContext, WorkerOptions, cli
 from livekit.plugins import elevenlabs, groq, silero, turn_detector
 
 from friday_agent.config import config
+from friday_agent.nlp import build_context
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 logger = logging.getLogger("friday_agent.livekit_agent")
@@ -14,6 +15,17 @@ logger = logging.getLogger("friday_agent.livekit_agent")
 class FridayAgent(Agent):
     def __init__(self) -> None:
         super().__init__(instructions=config.instructions)
+
+    async def on_user_turn_completed(self, turn_ctx, new_message) -> None:
+        """Add lightweight NLP structure before the LLM processes each user turn."""
+        text = ""
+        for content in getattr(new_message, "content", []):
+            if isinstance(content, str):
+                text += content + " "
+        text = text.strip()
+        if text:
+            turn_ctx.add_message(role="system", content=build_context(text))
+        await super().on_user_turn_completed(turn_ctx, new_message)
 
 
 async def entrypoint(ctx: JobContext) -> None:
