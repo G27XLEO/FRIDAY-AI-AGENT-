@@ -1,68 +1,84 @@
 # FRIDAY AI Agent
 
-A production-oriented realtime voice agent built around **LiveKit Agents**, **Groq**, **ElevenLabs**, **Silero VAD**, turn detection, and a custom **MCP server**.
+A production-oriented realtime voice-first AI assistant built around **LiveKit Agents**, **Groq**, **ElevenLabs**, **Silero VAD**, turn detection, **FastAPI**, and a custom **MCP server**.
 
-FRIDAY is a cross-platform, voice-first mission-control assistant: concise, proactive, technically precise, calm under pressure, and suitable for local development or server deployment.
+FRIDAY is a cross-platform mission-control assistant: concise, proactive, technically precise, calm under pressure, and suitable for local development or server deployment.
+
+> **Scope:** FRIDAY is a software-only assistant. This repository does **not** add Raspberry Pi, GPIO, microcontrollers, sensors, smart-home, MQTT, Bluetooth/BLE, or other hardware/IoT control.
 
 > **Security:** Never commit API keys, LiveKit credentials, OAuth tokens, or other secrets. Use `.env` locally and GitHub Actions Secrets for CI/CD.
 
 ## Current status
 
-- **Runtime:** LiveKit voice worker + optional MCP server
-- **AI:** Groq STT + LLM
+- **Runtime:** LiveKit realtime voice worker + optional MCP server
+- **AI / STT:** Groq speech recognition
+- **Reasoning:** Groq LLM
 - **Voice:** ElevenLabs TTS
 - **Audio:** Silero VAD + turn detection
+- **API:** FastAPI/ASGI support through the existing web server
 - **Tools:** Custom MCP server with workspace, command, URL, memory, status, and planning tools
 - **Container:** Docker / Python 3.12
-- **Development hosts:** Linux, macOS, Windows, WSL, and Android/Termux
-- **Server deployment:** Docker or any supported Linux/Python host
+- **Development hosts:** Linux, macOS, Windows, WSL2, and Android/Termux
+- **Server deployment:** Docker or a supported Linux/Python host
 - **CI:** GitHub Actions builds and validates the worker image
-- **Native mobile UI:** Not required by the worker architecture; clients can connect through LiveKit
-- **Publishing:** Release/deployment remains a separate later step
+- **Clients:** Web, Android, iOS, desktop, terminal/CLI clients can act as software endpoints through LiveKit or the API
+- **Hardware/IoT:** **Intentionally out of scope**
 
-## UI demo snapshot
+## Reference architecture
 
-The repository includes a review-only UI concept showing the intended FRIDAY mission-control experience. It is a static design reference and is **not** a claim that a production dashboard is already deployed.
-
-![FRIDAY UI demo snapshot](docs/assets/friday-ui-demo.svg)
-
-See `docs/UI_DEMO.md` for the design notes and component map.
-
-## Architecture
+The uploaded JARVIS-style setup guide describes the assistant as a layered software pipeline: language/core libraries → speech recognition → language understanding → reasoning → speech synthesis → API service → real-time runtime. It also lists hardware/IoT as an optional extension; FRIDAY deliberately stops before that extension and remains software-only.
 
 ```text
-┌─────────────────────────────────────────────────────────┐
-│                    FRIDAY CLIENTS                       │
-│  Web │ Android │ iOS │ Desktop │ Termux │ CLI/Agents   │
-└──────────────────────────┬──────────────────────────────┘
-                           │ LiveKit
-                           ▼
-                 ┌──────────────────────┐
-                 │  LiveKit Cloud/Self  │
-                 └──────────┬───────────┘
-                            │
-                            ▼
-                 ┌──────────────────────┐
-                 │ FRIDAY LiveKit Worker│
-                 ├──────────────────────┤
-                 │ Groq STT             │
-                 │ Groq LLM             │
-                 │ Silero VAD           │
-                 │ Turn Detector        │
-                 │ ElevenLabs TTS       │
-                 └──────────┬───────────┘
-                            │
-                            ▼
-                 ┌──────────────────────┐
-                 │     FRIDAY MCP       │
-                 ├──────────────────────┤
-                 │ Status / URL         │
-                 │ Safe shell           │
-                 │ Workspace files      │
-                 │ Memory               │
-                 │ Planning             │
-                 └──────────────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│                    FRIDAY SOFTWARE CLIENTS                   │
+│       Web │ Android │ iOS │ Desktop │ Termux │ CLI           │
+└──────────────────────────────┬───────────────────────────────┘
+                               │ LiveKit / API
+                               ▼
+                    ┌──────────────────────┐
+                    │ Realtime / API Layer │
+                    │ LiveKit + FastAPI    │
+                    └──────────┬───────────┘
+                               ▼
+                    ┌──────────────────────┐
+                    │   FRIDAY Worker      │
+                    ├──────────────────────┤
+                    │ Silero VAD           │
+                    │ Turn Detection       │
+                    │ Groq STT             │
+                    │ Groq LLM             │
+                    │ ElevenLabs TTS       │
+                    └──────────┬───────────┘
+                               │
+                               ▼
+                    ┌──────────────────────┐
+                    │    FRIDAY MCP        │
+                    ├──────────────────────┤
+                    │ Status / URL         │
+                    │ Safe shell           │
+                    │ Workspace files      │
+                    │ Memory               │
+                    │ Planning             │
+                    └──────────────────────┘
+
+             NO HARDWARE / NO HOME-IOT LAYER
 ```
+
+## Software stack
+
+| Layer | FRIDAY implementation | Purpose |
+| --- | --- | --- |
+| Language & core | Python | Application glue and runtime |
+| Speech-to-text | Groq STT | Converts voice to text |
+| Language understanding | LLM-first routing | Intent and context understanding without a mandatory separate NLP service |
+| Reasoning | Groq LLM | Answers, plans, decisions, tool calls |
+| Text-to-speech | ElevenLabs | Natural spoken responses |
+| API | FastAPI / Uvicorn | HTTP/WebSocket service access |
+| Tool/action layer | MCP | Controlled software actions |
+| Real-time runtime | LiveKit + Python asyncio | Audio streaming, sessions, concurrency |
+| Deployment | Docker | Reproducible server runtime |
+
+The reference guide notes that a separate NLP stage can be skipped for a simple assistant when the LLM handles understanding directly; FRIDAY follows that simpler LLM-first approach. fileciteturn0file0L44-L51
 
 ## Features
 
@@ -84,9 +100,13 @@ See `docs/UI_DEMO.md` for the design notes and component map.
 | Planning | `plan_task` | Compact execution plans |
 | Operator prompt | `friday_operator_prompt` | Standardized mission prompt |
 
+### API layer
+
+The repository includes a web server for exposing software-side assistant functionality over HTTP/ASGI. The reference guide identifies FastAPI as the service layer for exposing an STT → LLM → TTS pipeline to software clients. fileciteturn0file0L67-L71
+
 ## Cross-platform support
 
-FRIDAY is a **Python/LiveKit worker**, so the development and client environment can be separated from the production worker.
+FRIDAY is a **Python/LiveKit worker**, so the development/client environment can be separated from the production worker.
 
 | Platform | Development | Worker | Recommended path |
 | --- | --- | --- | --- |
@@ -95,11 +115,11 @@ FRIDAY is a **Python/LiveKit worker**, so the development and client environment
 | Windows | ✅ | ⚠️ | WSL2 or Docker recommended |
 | WSL2 | ✅ | ✅ | Python or Docker |
 | Android / Termux | ✅ | ⚠️ | Termux for development; Docker/server for worker |
-| Web | Client | N/A | LiveKit web client |
-| iOS | Client | N/A | LiveKit client app |
+| Web | Client | N/A | LiveKit web client / API |
+| iOS | Client | N/A | LiveKit client / API |
 | Docker hosts | N/A | ✅ | Recommended production runtime |
 
-The table distinguishes **development/host support** from **native client support**. The core repository is not a native Android/iOS application.
+The table distinguishes **development/host support** from **software client support**. The core repository is not a native Android/iOS application and does not require physical hardware.
 
 ## Repository layout
 
@@ -160,7 +180,7 @@ Copy `.env.example` to `.env` and fill in your own credentials.
 | `FRIDAY_MAX_TEXT_CHARS` | `6000` | Output size limit |
 | `FRIDAY_MAX_WRITE_BYTES` | `1000000` | File-write size limit |
 
-## Install on any supported development platform
+## Install on supported development platforms
 
 The complete platform command reference is in `docs/INSTALL.md`.
 
@@ -201,7 +221,7 @@ python -m pip install -r requirements.txt
 cp .env.example .env
 ```
 
-If a native Python dependency is unavailable on a particular Android/Termux build, use Termux as the control/development environment and run the LiveKit worker in Docker or on a Linux server.
+If a native Python dependency is unavailable on a particular Android/Termux build, use Termux as the control/development environment and run the LiveKit worker in Docker or on a Linux server. No Raspberry Pi or other physical device is required.
 
 ## Start FRIDAY
 
@@ -273,6 +293,7 @@ docker build --pull -t friday-ai-agent .
 - Run production containers as non-root.
 - Protect any publicly exposed MCP endpoint with authentication and transport controls.
 - Treat voice credentials and third-party service tokens as production secrets.
+- Do not add physical-device credentials or home-IoT control paths to the software-only core.
 
 ## Publishing later
 
@@ -283,10 +304,16 @@ Publishing is **not performed by this update**. When ready, use the release gate
 - Harden MCP authentication and authorization.
 - Improve health/status reporting and startup diagnostics.
 - Reduce voice latency and improve audio reliability.
-- Add more MCP connectors and permission-aware automation.
+- Add more software MCP connectors and permission-aware automation.
+- Improve FastAPI/WebSocket client integration.
 - Add production container registry and release automation.
 - Expand client integrations for web, Android, iOS, desktop, and terminal workflows.
 - Add production observability, audit trails, and task-state management.
+- **No hardware/IoT roadmap item is planned for the core FRIDAY repository.**
+
+## Reference source
+
+The uploaded JARVIS-style setup guide identifies Python, STT, NLP/LLM understanding, an LLM reasoning engine, TTS, FastAPI, and a real-time runtime as the main software layers. It describes hardware/IoT separately as an optional extension; FRIDAY intentionally does not implement that extension. fileciteturn0file0L2-L20 fileciteturn0file0L72-L94
 
 ## License / usage
 
