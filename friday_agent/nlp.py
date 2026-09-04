@@ -33,22 +33,44 @@ _URGENT_WORDS = {"urgent", "asap", "immediately", "critical", "emergency"}
 
 
 def _normalize(text: str) -> str:
+    """Normalize text: strip, collapse whitespace, convert to lowercase."""
+    if not text:
+        return ""
     text = text.strip()
     text = re.sub(r"\s+", " ", text)
     return text.casefold()
 
 
 def _intent(text: str) -> str:
+    """Extract intent from normalized text using keyword matching.
+    
+    Matches on word boundaries to avoid partial matches.
+    Returns the first matching intent, or 'general' if no match.
+    """
+    if not text:
+        return "general"
+    
     for intent, keywords in _INTENT_PATTERNS:
-        if any(keyword in text for keyword in keywords):
-            return intent
+        for keyword in keywords:
+            # Use word boundary matching to avoid substring matches
+            pattern = r'\b' + re.escape(keyword) + r'\b'
+            if re.search(pattern, text, flags=re.IGNORECASE):
+                return intent
     return "general"
 
 
 def _entities(text: str) -> tuple[str, ...]:
+    """Extract named entities (URLs, mentions, known services).
+    
+    Searches the original (non-normalized) text to preserve exact formatting.
+    Limits results to 12 entities to keep output compact.
+    """
+    if not text:
+        return ()
+    
     found: list[str] = []
     patterns = (
-        r"https?://[^\s]+",
+        r"https?://[^\s\)]+",  # URLs with boundary checking
         r"@[A-Za-z0-9_.-]+",
         r"\b(?:FRIDAY|GitHub|LiveKit|Groq|ElevenLabs|MCP|Termux)\b",
     )
@@ -60,11 +82,15 @@ def _entities(text: str) -> tuple[str, ...]:
 
 
 def analyze(text: str) -> NLPResult:
-    """Normalize a transcript and extract lightweight intent/entities."""
+    """Normalize a transcript and extract lightweight intent/entities.
+    
+    Handles empty/whitespace-only input gracefully.
+    """
+    text = text.strip() if text else ""
     normalized = _normalize(text)
     urgency = "high" if any(word in normalized for word in _URGENT_WORDS) else "normal"
     return NLPResult(
-        text=text.strip(),
+        text=text,
         normalized=normalized,
         intent=_intent(normalized),
         urgency=urgency,
@@ -73,7 +99,10 @@ def analyze(text: str) -> NLPResult:
 
 
 def build_context(text: str) -> str:
-    """Create compact structured NLP context for the LLM prompt."""
+    """Create compact structured NLP context for the LLM prompt.
+    
+    Handles empty input by returning a minimal valid context block.
+    """
     result = analyze(text)
     entities = ", ".join(result.entities) if result.entities else "none"
     return (
