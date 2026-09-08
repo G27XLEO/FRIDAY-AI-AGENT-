@@ -88,13 +88,21 @@ def analyze(text: str) -> NLPResult:
     """
     text = text.strip() if text else ""
     normalized = _normalize(text)
+    entities = _entities(text)
+
+    # If a URL is present, prefer the 'web' intent even if no web keywords appear.
+    if any(e.lower().startswith("http") for e in entities):
+        intent = "web"
+    else:
+        intent = _intent(normalized)
+
     urgency = "high" if any(word in normalized for word in _URGENT_WORDS) else "normal"
     return NLPResult(
         text=text,
         normalized=normalized,
-        intent=_intent(normalized),
+        intent=intent,
         urgency=urgency,
-        entities=_entities(text),
+        entities=entities,
     )
 
 
