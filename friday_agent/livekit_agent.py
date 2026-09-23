@@ -4,8 +4,8 @@ import json
 import logging
 from typing import Any
 
-from livekit.agents import Agent, AgentSession, JobContext, WorkerOptions, cli, mcp
-from livekit.plugins import elevenlabs, groq, silero, turn_detector
+from livekit.agents import Agent, AgentSession, JobContext, WorkerOptions, cli, inference, mcp
+from livekit.plugins import elevenlabs, groq, silero
 
 from friday_agent.config import config
 from friday_agent.nlp import build_context
@@ -98,7 +98,7 @@ async def entrypoint(ctx: JobContext) -> None:
         llm=groq.LLM(model=config.groq_llm_model),
         tts=elevenlabs.TTS(voice_id=config.elevenlabs_voice_id or None),
         vad=silero.VAD.load(),
-        turn_detection=turn_detector.EOUModel(),
+        turn_detection=inference.TurnDetector(),
         max_tool_steps=config.max_tool_steps,
     )
 
