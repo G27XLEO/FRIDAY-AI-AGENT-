@@ -318,3 +318,67 @@ The uploaded JARVIS-style setup guide identifies Python, STT, NLP/LLM understand
 ## License / usage
 
 Review the repository license and third-party service terms before public distribution. Use only voices, credentials, models, and integrations that you are authorized to use.
+
+
+## Astra architecture upgrade
+
+The current architecture is optimized as a JARVIS-style software assistant while keeping the project name FRIDAY. It adds three latency-focused layers:
+
+Voice/API client -> LiveKit realtime worker -> lightweight NLP router -> Groq reasoning -> first-class MCP tool loop -> ElevenLabs speech.
+
+The NLP layer uses deterministic intent, urgency and entity extraction before the LLM turn. The MCP layer reuses a pooled async HTTP client, with configurable connection limits and timeouts, while retaining workspace boundaries, command allow-listing and bounded outputs.
+
+### NLP vs. NCP
+
+The assistant uses **NLP (Natural Language Processing)** as the fast pre-processing layer. No heavyweight NLP model is loaded into the realtime audio path.
+
+### Fast MCP controls
+
+`FRIDAY_HTTP_MAX_CONNECTIONS`, `FRIDAY_HTTP_MAX_KEEPALIVE`, and `FRIDAY_HTTP_TIMEOUT` control the pooled HTTP client used by MCP URL tools. `FRIDAY_MCP_URL` enables first-class LiveKit MCP tool calling, while `FRIDAY_MCP_AUTH_TOKEN`, `FRIDAY_MCP_TIMEOUT_SECONDS`, `FRIDAY_MAX_TOOL_STEPS`, and `FRIDAY_MAX_TOOL_RESULT_CHARS` control authentication, latency, tool-loop depth, and context size.
+
+## JARVIS-style agentic runtime
+
+FRIDAY now connects the realtime LiveKit agent directly to the repository's MCP server through LiveKit's first-class MCP toolset. When `FRIDAY_MCP_URL` is configured, the LLM can discover and invoke the server's software tools during a voice conversation instead of treating MCP as a separate service.
+
+```text
+Voice
+  ↓
+LiveKit realtime session
+  ↓
+Fast deterministic NLP context
+  ↓
+Groq reasoning
+  ↓
+MCP tool loop ──→ status / web / files / memory / planning / safe shell
+  ↓
+ElevenLabs voice response
+```
+
+The tool loop is bounded by `FRIDAY_MAX_TOOL_STEPS`, MCP calls have a configurable timeout, and large results are truncated before entering the voice model context. MCP remains optional so the voice worker can still start when the MCP server is unavailable. LiveKit documents MCPToolset/MCPServerHTTP as the native Python integration for exposing MCP tools to an agent. citeturn2view0
+
+### Enable the FRIDAY MCP brain
+
+Add to `.env`:
+
+```text
+FRIDAY_MCP_URL=http://127.0.0.1:8000/mcp
+FRIDAY_MCP_TIMEOUT_SECONDS=20
+FRIDAY_MAX_TOOL_STEPS=5
+FRIDAY_MAX_TOOL_RESULT_CHARS=4000
+# Optional:
+# FRIDAY_MCP_AUTH_TOKEN=...
+```
+
+Start the MCP server first:
+
+```bash
+python -m friday_agent.mcp_server
+```
+
+Then start the LiveKit worker:
+
+```bash
+python -m friday_agent.livekit_agent dev
+```
+
+For production, place MCP behind authenticated HTTPS rather than exposing an unauthenticated local-style endpoint.
