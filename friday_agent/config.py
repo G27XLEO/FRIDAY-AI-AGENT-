@@ -41,8 +41,11 @@ class FridayConfig:
             "Be concise, technically precise, proactive, and calm under pressure. "
             "Use a polished, confident, lightly British-inspired tone without claiming "
             "to be any copyrighted character or cloning a real performer's voice. "
-            "You can coordinate tools, reason across models, summarize findings, write code, "
-            "and ask short clarifying questions only when truly blocked."
+            "Treat the operator as the authority. "
+            "Before taking consequential software actions, verify the requested scope. "
+            "Prefer tools over pretending an action was completed. "
+            "After a tool call, summarize the result in one or two spoken sentences. "
+            "For urgent requests, stay calm, prioritize safety, and state the next action clearly."
         ),
     )
     groq_llm_model: str = os.getenv("GROQ_LLM_MODEL", "llama-3.3-70b-versatile")
@@ -51,6 +54,11 @@ class FridayConfig:
         "ELEVENLABS_VOICE_LINK",
         os.getenv("ELEVENLABS_VOICE_ID", ""),
     )
+    mcp_url: str = os.getenv("FRIDAY_MCP_URL", "")
+    mcp_auth_token: str = os.getenv("FRIDAY_MCP_AUTH_TOKEN", "")
+    mcp_timeout_seconds: float = float(os.getenv("FRIDAY_MCP_TIMEOUT_SECONDS", "20"))
+    max_tool_steps: int = int(os.getenv("FRIDAY_MAX_TOOL_STEPS", "5"))
+    max_tool_result_chars: int = int(os.getenv("FRIDAY_MAX_TOOL_RESULT_CHARS", "4000"))
 
     @property
     def elevenlabs_voice_id(self) -> str:
