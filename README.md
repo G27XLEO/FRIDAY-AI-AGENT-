@@ -318,3 +318,20 @@ The uploaded JARVIS-style setup guide identifies Python, STT, NLP/LLM understand
 ## License / usage
 
 Review the repository license and third-party service terms before public distribution. Use only voices, credentials, models, and integrations that you are authorized to use.
+
+
+## Astra architecture upgrade
+
+The current architecture is optimized as a JARVIS-style software assistant while keeping the project name FRIDAY. It adds three latency-focused layers:
+
+Voice/API client -> LiveKit realtime worker -> lightweight NLP router -> Groq reasoning -> ElevenLabs speech -> FRIDAY MCP gateway.
+
+The NLP layer uses deterministic intent, urgency and entity extraction before the LLM turn. The MCP layer reuses a pooled async HTTP client, with configurable connection limits and timeouts, while retaining workspace boundaries, command allow-listing and bounded outputs.
+
+### NLP vs. NCP
+
+The assistant uses **NLP (Natural Language Processing)** as the fast pre-processing layer. No heavyweight NLP model is loaded into the realtime audio path.
+
+### Fast MCP controls
+
+`FRIDAY_HTTP_MAX_CONNECTIONS`, `FRIDAY_HTTP_MAX_KEEPALIVE`, and `FRIDAY_HTTP_TIMEOUT` control the pooled HTTP client used by MCP URL tools.
