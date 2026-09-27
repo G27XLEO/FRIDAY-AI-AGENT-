@@ -56,7 +56,7 @@ class FridayConfig:
         "FRIDAY_MCP_SERVER_URL", "http://127.0.0.1:8000/mcp"
     )
     mcp_transport: str = os.getenv(
-        "FRIDAY_MCP_TRANSPORT", "streamable-http"
+        "FRIDAY_MCP_TRANSPORT", "streamable_http"
     )
     mcp_timeout_seconds: float = float(
         os.getenv("FRIDAY_MCP_TIMEOUT_SECONDS", "30")
