@@ -3,7 +3,6 @@ set -euo pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")"
 
-# Reuse the Codespace environment prepared by .devcontainer/setup.sh.
 if ! python -c 'import livekit.agents' >/dev/null 2>&1; then
   echo "FRIDAY dependencies are not installed. Installing now..."
   python -m pip install --user -r requirements.txt
@@ -19,19 +18,25 @@ for name in "${required[@]}"; do
 done
 
 if (( ${#missing[@]} )); then
-  echo "ERROR: Missing required Codespaces secrets/environment variables:"
+  echo "ERROR: Missing required environment variables:"
   printf '  %s\n' "${missing[@]}"
-  echo
-  echo "Add them in GitHub Codespaces Secrets, then recreate/restart the Codespace."
   exit 1
+fi
+
+MCP_PID=""
+if [[ "${FRIDAY_MCP_ENABLED:-true}" =~ ^(1|true|yes|on)$ ]]; then
+  echo "Starting FRIDAY MCP capability server..."
+  python -m friday_agent.mcp_server >/tmp/friday-mcp.log 2>&1 &
+  MCP_PID=$!
+  trap 'if [[ -n "${MCP_PID:-}" ]]; then kill "$MCP_PID" 2>/dev/null || true; fi' EXIT
+  sleep 1
 fi
 
 echo ""
 echo "=============================================="
-echo "        FRIDAY AI — LIVEKIT WORKER           "
+echo "        FRIDAY AI — LIVEKIT + MCP             "
 echo "=============================================="
-echo "Starting realtime voice agent..."
-echo "Press Ctrl+C to stop."
+echo "Realtime voice agent and capability server online."
 echo ""
 
 exec python -m friday_agent.livekit_agent dev
