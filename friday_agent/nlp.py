@@ -1,15 +1,13 @@
 from __future__ import annotations
 
-"""Lightweight NLP preprocessing for FRIDAY voice requests.
+"""Fast deterministic NLP routing for the realtime voice path.
 
-The module deliberately avoids a heavyweight NLP model in the realtime path.
-It normalizes speech transcripts, extracts a small amount of intent metadata,
-and produces a compact context block for the reasoning model.
+This is intentionally lightweight: it enriches the LLM context without loading a
+large local NLP model into the latency-sensitive LiveKit worker.
 """
 
 import re
 from dataclasses import dataclass
-
 
 @dataclass(frozen=True)
 class NLPResult:
@@ -19,8 +17,7 @@ class NLPResult:
     urgency: str
     entities: tuple[str, ...]
 
-
-_INTENT_PATTERNS: tuple[tuple[str, tuple[str, ...]], ...] = (
+_INTENT_PATTERNS = (
     ("status", ("status", "health", "online", "running", "system check")),
     ("planning", ("plan", "planning", "steps", "roadmap", "how should i")),
     ("code", ("code", "script", "program", "debug", "error", "repository", "github")),
@@ -28,89 +25,41 @@ _INTENT_PATTERNS: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("file", ("file", "folder", "directory", "read", "write", "edit")),
     ("memory", ("remember", "recall", "forget", "memory")),
 )
-
 _URGENT_WORDS = {"urgent", "asap", "immediately", "critical", "emergency"}
 
-
 def _normalize(text: str) -> str:
-    """Normalize text: strip, collapse whitespace, convert to lowercase."""
-    if not text:
-        return ""
-    text = text.strip()
-    text = re.sub(r"\s+", " ", text)
-    return text.casefold()
-
+    return re.sub(r"\s+", " ", text.strip()).casefold() if text else ""
 
 def _intent(text: str) -> str:
-    """Extract intent from normalized text using keyword matching.
-    
-    Matches on word boundaries to avoid partial matches.
-    Returns the first matching intent, or 'general' if no match.
-    """
-    if not text:
-        return "general"
-    
     for intent, keywords in _INTENT_PATTERNS:
-        for keyword in keywords:
-            # Use word boundary matching to avoid substring matches
-            pattern = r'\b' + re.escape(keyword) + r'\b'
-            if re.search(pattern, text, flags=re.IGNORECASE):
-                return intent
+        if any(re.search(r"\b" + re.escape(keyword) + r"\b", text) for keyword in keywords):
+            return intent
     return "general"
 
-
 def _entities(text: str) -> tuple[str, ...]:
-    """Extract named entities (URLs, mentions, known services).
-    
-    Searches the original (non-normalized) text to preserve exact formatting.
-    Limits results to 12 entities to keep output compact.
-    """
     if not text:
         return ()
-    
-    found: list[str] = []
     patterns = (
-        r"https?://[^\s\)]+",  # URLs with boundary checking
+        r"https?://[^\s\)]+",
         r"@[A-Za-z0-9_.-]+",
-        r"\b(?:FRIDAY|GitHub|LiveKit|Groq|ElevenLabs|MCP|Termux)\b",
+        r"\b(?:FRIDAY|JARVIS|GitHub|LiveKit|Groq|ElevenLabs|MCP|NLP|Termux)\b",
     )
+    found = []
     for pattern in patterns:
         for match in re.findall(pattern, text, flags=re.IGNORECASE):
             if match not in found:
                 found.append(match)
     return tuple(found[:12])
 
-
 def analyze(text: str) -> NLPResult:
-    """Normalize a transcript and extract lightweight intent/entities.
-    
-    Handles empty/whitespace-only input gracefully.
-    """
-    text = text.strip() if text else ""
-    normalized = _normalize(text)
-    entities = _entities(text)
-
-    # If a URL is present, prefer the 'web' intent even if no web keywords appear.
-    if any(e.lower().startswith("http") for e in entities):
-        intent = "web"
-    else:
-        intent = _intent(normalized)
-
-    urgency = "high" if any(word in normalized for word in _URGENT_WORDS) else "normal"
-    return NLPResult(
-        text=text,
-        normalized=normalized,
-        intent=intent,
-        urgency=urgency,
-        entities=entities,
-    )
-
+    raw = text.strip() if text else ""
+    normalized = _normalize(raw)
+    entities = _entities(raw)
+    intent = "web" if any(e.lower().startswith("http") for e in entities) else _intent(normalized)
+    urgency = "high" if any(re.search(r"\b" + re.escape(word) + r"\b", normalized) for word in _URGENT_WORDS) else "normal"
+    return NLPResult(raw, normalized, intent, urgency, entities)
 
 def build_context(text: str) -> str:
-    """Create compact structured NLP context for the LLM prompt.
-    
-    Handles empty input by returning a minimal valid context block.
-    """
     result = analyze(text)
     entities = ", ".join(result.entities) if result.entities else "none"
     return (
