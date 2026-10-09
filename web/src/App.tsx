@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import type { ReactNode } from 'react'
 import {
   Activity, AlertTriangle, ArrowUpRight, AudioLines, CheckCircle2,
   CircleDot, Clock3, Cpu, Gauge, Radio, RefreshCw, Server, ShieldCheck,
@@ -158,7 +159,7 @@ function App() {
   )
 }
 
-function MetricCard({ icon, label, value, detail, accent, progress }: { icon: React.ReactNode; label: string; value: string; detail: string; accent: string; progress?: number }) {
+function MetricCard({ icon, label, value, detail, accent, progress }: { icon: ReactNode; label: string; value: string; detail: string; accent: string; progress?: number }) {
   return <article className={`metric-card accent-${accent}`}><div className="metric-top"><span className="metric-icon">{icon}</span><span className="metric-label">{label}</span></div><div className="metric-value">{value}</div><p>{detail}</p>{progress !== undefined && <div className="progress-track"><span style={{ width: `${Math.min(100, Math.max(0, progress))}%` }} /></div>}</article>
 }
 function OverviewRow({ icon, label, value, status, warn }: { icon: React.ReactNode; label: string; value: string; status?: boolean; warn?: boolean }) {
