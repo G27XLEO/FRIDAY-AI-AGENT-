@@ -18,7 +18,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Build LiveKit worker image
         run: docker build --pull -t friday-ai-agent:ci .
@@ -51,3 +51,28 @@ jobs:
             -e FRIDAY_VALIDATE_RUNTIME_ENV=1 \
             friday-ai-agent:ci \
             python -m unittest tests.test_env -v
+
+  web-dashboard:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package.json
+
+      - name: Install frontend dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Type-check dashboard
+        run: npm run type-check
+
+      - name: Build production dashboard
+        run: npm run build
