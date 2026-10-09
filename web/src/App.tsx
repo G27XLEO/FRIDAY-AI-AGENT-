@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import {
-  Activity, AlertTriangle, ArrowUpRight, AudioLines, CheckCircle2,
+  Activity, AlertTriangle, ArrowUpRight, CheckCircle2,
   CircleDot, Clock3, Cpu, Gauge, Radio, RefreshCw, Server, ShieldCheck,
   Signal, Wifi, WifiOff, Zap,
 } from 'lucide-react'
@@ -94,7 +94,7 @@ function App() {
       <div className="ambient ambient-two" aria-hidden="true" />
       <header className="topbar">
         <a className="brand" href="/" aria-label="FRIDAY Mission Control home">
-          <span className="brand-mark"><AudioLines size={22} /></span>
+          <span className="brand-mark"><Activity size={22} /></span>
           <span><strong>FRIDAY</strong><small>MISSION CONTROL</small></span>
         </a>
         <div className="topbar-right">
