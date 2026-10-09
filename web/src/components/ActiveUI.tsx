@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react'
-import { Waveform, Mic, Zap } from 'lucide-react'
+import { Activity, Mic, Zap } from 'lucide-react'
 
 interface AudioVisualizerProps {
   isListening: boolean
@@ -69,7 +69,7 @@ export const ActiveUI: React.FC<AudioVisualizerProps> = ({ isListening, isProces
   return (
     <div className="space-y-4">
       <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-        <Waveform className="w-6 h-6 text-cyan-400" />
+        <Activity className="w-6 h-6 text-cyan-400" />
         Active UI - Unique Visual Feedback
       </h2>
 
