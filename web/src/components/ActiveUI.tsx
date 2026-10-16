@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react'
 import { Waveform, Mic, Zap } from 'lucide-react'
+import { MetalFx } from 'metal-fx'
 
 interface AudioVisualizerProps {
   isListening: boolean
@@ -79,16 +80,20 @@ export const ActiveUI: React.FC<AudioVisualizerProps> = ({ isListening, isProces
           <h3 className="text-lg font-semibold text-slate-300">Audio Waveform</h3>
           <div className="flex items-center gap-2">
             {isListening && (
-              <div className="flex items-center gap-2 bg-green-900 text-green-300 px-3 py-1 rounded text-sm">
-                <Mic className="w-4 h-4" />
-                Listening
-              </div>
+              <MetalFx preset="chromatic" theme="dark" strength={0.75}>
+                <div className="flex items-center gap-2 bg-green-900 text-green-300 px-3 py-1 rounded text-sm">
+                  <Mic className="w-4 h-4" />
+                  Listening
+                </div>
+              </MetalFx>
             )}
             {isProcessing && (
-              <div className="flex items-center gap-2 bg-blue-900 text-blue-300 px-3 py-1 rounded text-sm">
-                <Zap className="w-4 h-4 animate-pulse" />
-                Processing
-              </div>
+              <MetalFx preset="silver" theme="dark" strength={0.65} paused={!isProcessing}>
+                <div className="flex items-center gap-2 bg-blue-900 text-blue-300 px-3 py-1 rounded text-sm">
+                  <Zap className="w-4 h-4 animate-pulse" />
+                  Processing
+                </div>
+              </MetalFx>
             )}
           </div>
         </div>
