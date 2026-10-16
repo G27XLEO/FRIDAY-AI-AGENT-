@@ -17,7 +17,8 @@
     "@mediapipe/hands": "^0.4.1646425200",
     "@mediapipe/drawing_utils": "^0.4.1646425200",
     "axios": "^1.6.0",
-    "lucide-react": "^0.308.0"
+    "lucide-react": "^0.308.0",
+    "metal-fx": "^2.0.11"
   },
   "devDependencies": {
     "@types/react": "^18.2.43",
