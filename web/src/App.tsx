@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import {
   Activity, ArrowRight, ArrowUpRight, Bot, Check, CheckCircle2,
-  ClipboardList, Clock3, Command, Cpu, Info, Layers3, ListChecks,
+  ClipboardList, Clock3, Cpu, Info, Layers3, ListChecks,
   Plus, RotateCcw, ShieldCheck, Sparkles, Trash2, Zap,
 } from 'lucide-react'
 import { ThinkingOrb } from 'thinking-orbs'
@@ -23,7 +23,7 @@ type LocalEvent = { id: string; message: string; createdAt: string }
 type Workspace = { missions: Mission[]; events: LocalEvent[] }
 
 const STORAGE_KEY = 'friday-standalone-workspace-v1'
-const DEFAULT_STEPS = 'Define the objective\nPrepare the execution plan\nReview the result'
+const DEFAULT_STEPS = 'Define the objective\nPrepare the execution plan\nReview the result'\n\nfunction uniqueId() {\n  return typeof crypto !== 'undefined' && 'randomUUID' in crypto\n    ? crypto.randomUUID()\n    : String(Date.now()) + '-' + Math.random().toString(36).slice(2)\n}
 
 const previews: { state: VisualState; label: string; description: string }[] = [
   { state: 'breathing', label: 'Standby', description: 'Ambient visual state' },
@@ -107,29 +107,17 @@ export default function App() {
     [workspace.missions]
   )
 
-  function logAction(message: string) {
-    const event: LocalEvent = {
-      id: crypto.randomUUID(),
-      message,
-      createdAt: new Date().toISOString(),
-    }
-    setWorkspace(previous => ({
-      ...previous,
-      events: [event, ...previous.events].slice(0, 40),
-    }))
-  }
-
   function createMission(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const title = goal.trim()
     const lines = stepsText.split('\n').map(line => line.trim()).filter(Boolean)
     if (!title || !criteria.trim() || lines.length === 0) return
     const mission: Mission = {
-      id: crypto.randomUUID(),
+      id: uniqueId(),
       title: title.slice(0, 160),
       criteria: criteria.trim().slice(0, 400),
       steps: lines.slice(0, 8).map(label => ({
-        id: crypto.randomUUID(),
+        id: uniqueId(),
         label: label.slice(0, 160),
         done: false,
       })),
@@ -138,7 +126,7 @@ export default function App() {
     setWorkspace(previous => ({
       missions: [mission, ...previous.missions].slice(0, 30),
       events: [{
-        id: crypto.randomUUID(),
+        id: uniqueId(),
         message: 'Created local mission: ' + mission.title,
         createdAt: new Date().toISOString(),
       }, ...previous.events].slice(0, 40),
@@ -159,7 +147,7 @@ export default function App() {
           ? { ...entry, done: !entry.done } : entry),
       } : item),
       events: [{
-        id: crypto.randomUUID(),
+        id: uniqueId(),
         message: (step.done ? 'Reopened: ' : 'Manually checked: ') + step.label,
         createdAt: new Date().toISOString(),
       }, ...previous.events].slice(0, 40),
@@ -172,7 +160,7 @@ export default function App() {
     setWorkspace(previous => ({
       missions: previous.missions.filter(item => item.id !== missionId),
       events: [{
-        id: crypto.randomUUID(),
+        id: uniqueId(),
         message: 'Removed local mission: ' + mission.title,
         createdAt: new Date().toISOString(),
       }, ...previous.events].slice(0, 40),
