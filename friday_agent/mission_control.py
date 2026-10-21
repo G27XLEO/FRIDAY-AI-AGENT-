@@ -101,9 +101,9 @@ class MissionControl:
             raise ValueError("passed must be boolean")
         with self._lock:
             mission = self._get(mission_id)
-            index = step_number - 1
-            if type(step_number) is not int or not 0 <= index < len(mission.steps):
+            if type(step_number) is not int or not 1 <= step_number <= len(mission.steps):
                 raise ValueError("step_number is out of range")
+            index = step_number - 1
             current = next(
                 (i for i, step in enumerate(mission.steps) if step.status in ("active", "blocked")),
                 None,
