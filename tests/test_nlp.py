@@ -79,5 +79,24 @@ class NLPTests(unittest.TestCase):
         self.assertLessEqual(len(result.entities), 12)
 
 
+    def test_hindi_intents(self) -> None:
+        self.assertEqual(analyze("मुझे सिस्टम की स्थिति बताओ").intent, "status")
+        self.assertEqual(analyze("जल्दी योजना बनाओ").intent, "planning")
+        self.assertEqual(analyze("जल्दी योजना बनाओ").language, "hi")
+        self.assertEqual(analyze("जल्दी योजना बनाओ").urgency, "high")
+
+    def test_marathi_intents(self) -> None:
+        result = analyze("कृपया सिस्टम तपासा")
+        self.assertEqual(result.language, "mr")
+        self.assertEqual(result.intent, "status")
+        self.assertEqual(analyze("तातडीने नियोजन करा").urgency, "high")
+
+    def test_language_hints_are_not_permissions(self) -> None:
+        self.assertEqual(analyze("open the settings please").intent, "general")
+        self.assertIn("language=hi", build_context("योजना बनाओ"))
+
+    def test_no_urgency_from_partial_words(self) -> None:
+        self.assertEqual(analyze("critically acclaimed").urgency, "normal")
+
 if __name__ == "__main__":
     unittest.main()
