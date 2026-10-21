@@ -10,15 +10,11 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@mediapipe/drawing_utils": "^0.3.1675466123",
-    "@mediapipe/hands": "^0.4.1646425200",
-    "axios": "^1.6.0",
     "border-beam": "*",
     "lucide-react": "^0.308.0",
     "metal-fx": "^2.0.11",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "recharts": "^2.10.0",
     "thinking-orbs": "*"
   },
   "devDependencies": {
