@@ -29,6 +29,8 @@ public final class CommandRouter {
         } else if (text.startsWith("friday")) {
             text = text.substring("friday".length()).trim();
         }
+        // Recognizers often add punctuation after a wake phrase.
+        text = text.replaceFirst("^[,.:!?;\\s]+", "");
         if (text.isEmpty()) {
             return Action.WAKE;
         }
