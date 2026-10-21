@@ -141,7 +141,8 @@ class FridayAgent(Agent):
             turn_ctx.add_message(
                 role="assistant",
                 content=(f"Non-authoritative intent signal: {signals.intent}; "
-                         f"urgency: {signals.urgency}."),
+                         f"urgency: {signals.urgency}; language: {signals.language}. "
+                         "Answer in the detected language unless the operator requests otherwise."),
             )
         await super().on_user_turn_completed(turn_ctx, new_message)
 
@@ -153,9 +154,11 @@ async def entrypoint(ctx: JobContext) -> None:
     await ctx.connect()
     logger.info("Connected to LiveKit room '%s'", ctx.room.name)
     session = AgentSession(
-        stt=groq.STT(model=config.groq_stt_model),
+        stt=groq.STT(model=config.groq_stt_model,
+                     detect_language=config.multilingual_stt),
         llm=groq.LLM(model=config.groq_llm_model),
-        tts=elevenlabs.TTS(voice_id=config.elevenlabs_voice_id or None),
+        tts=elevenlabs.TTS(voice_id=config.elevenlabs_voice_id or None,
+                           model=config.tts_model),
         vad=silero.VAD.load(),
         turn_detection=turn_detector.EOUModel(),
     )
