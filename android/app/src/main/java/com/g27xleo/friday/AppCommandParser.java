@@ -12,7 +12,7 @@ public final class AppCommandParser {
     private AppCommandParser() { }
 
     public static String requestedApp(String utterance) {
-        if (utterance == null) return null;
+        if (utterance == null || utterance.indexOf('\n') >= 0 || utterance.indexOf('\r') >= 0) return null;
         String text = Normalizer.normalize(utterance, Normalizer.Form.NFC)
                 .trim().toLowerCase(Locale.ROOT)
                 .replaceAll("[!?.,।॥]+$", "")
