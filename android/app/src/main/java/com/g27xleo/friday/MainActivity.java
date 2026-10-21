@@ -74,107 +74,171 @@ public class MainActivity extends Activity {
         }
     }
 
+    /**
+     * FRIDAY home adopts Libraries.dev's visual language (black, oversized
+     * typography, pill navigation, effect showcase cards) without copying
+     * its brand assets or claiming that React npm effects run in native Java.
+     * All actions below retain their real device handlers.
+     */
     private void createInterface() {
-        final int cyan = 0xFF67E9F9;
-        final int muted = 0xFF8AAABE;
+        final int white = 0xFFF4F4F4;
+        final int muted = 0xFFAAAAAA;
+        final int cyan = 0xFFB5F7FF;
+        final int border = 0xFF393939;
+
         ScrollView scroll = new ScrollView(this);
         scroll.setFillViewport(true);
-        scroll.setClipToPadding(false);
-        GradientDrawable background = new GradientDrawable(
-                GradientDrawable.Orientation.TL_BR,
-                new int[] { 0xFF030912, 0xFF0A1C2A, 0xFF020710 });
-        scroll.setBackground(background);
+        scroll.setBackgroundColor(0xFF050505);
         setContentView(scroll);
+        LinearLayout page = new LinearLayout(this);
+        page.setOrientation(LinearLayout.VERTICAL);
+        page.setPadding(dp(20), dp(18), dp(20), dp(30));
+        scroll.addView(page);
 
-        LinearLayout outer = new LinearLayout(this);
-        outer.setOrientation(LinearLayout.VERTICAL);
-        outer.setGravity(Gravity.CENTER_HORIZONTAL);
-        outer.setPadding(dp(18), dp(20), dp(18), dp(32));
-        scroll.addView(outer);
+        // Clean product navigation rather than a diagnostic header.
+        LinearLayout navigation = new LinearLayout(this);
+        navigation.setOrientation(LinearLayout.HORIZONTAL);
+        navigation.setGravity(Gravity.CENTER_VERTICAL);
+        page.addView(navigation, fullButtonParams());
+        TextView brand = label("◈  FRIDAY", 19, white, true);
+        brand.setGravity(Gravity.START | Gravity.CENTER_VERTICAL);
+        brand.setLetterSpacing(-0.02f);
+        navigation.addView(brand, new LinearLayout.LayoutParams(0, dp(45), 1f));
+        TextView navLabel = label("ASSISTANT  •  LOCAL", 10, 0xFFCBCBCB, true);
+        navLabel.setPadding(dp(13), dp(11), dp(13), dp(11));
+        navLabel.setBackground(panelShape(0xFF171717, border, 25));
+        navigation.addView(navLabel);
+        spacer(page, 32);
 
-        // Minimal telemetry rail; no fake network connectivity indicators.
-        LinearLayout top = new LinearLayout(this);
-        top.setGravity(Gravity.CENTER_VERTICAL);
-        top.setOrientation(LinearLayout.HORIZONTAL);
-        outer.addView(top, fullButtonParams());
-        TextView mark = label("◈  F R I D A Y", 17, 0xFFE4FDFF, true);
-        mark.setGravity(Gravity.START | Gravity.CENTER_VERTICAL);
-        mark.setTypeface(Typeface.create("monospace", Typeface.BOLD));
-        top.addView(mark, new LinearLayout.LayoutParams(0, dp(44), 1f));
-        TextView edition = label("O S  /  0 3", 10, cyan, true);
-        edition.setTypeface(Typeface.MONOSPACE);
-        edition.setGravity(Gravity.END | Gravity.CENTER_VERTICAL);
-        top.addView(edition);
-        spacer(outer, 6);
-        TextView subtitle = label("PERSONAL ASSISTANT   //   TACTICAL INTERFACE", 10, muted, false);
-        subtitle.setGravity(Gravity.START);
-        subtitle.setLetterSpacing(0.12f);
-        outer.addView(subtitle, fullButtonParams());
-        spacer(outer, 18);
+        TextView micro = label("◉  YOUR PERSONAL AI INTERFACE", 11, muted, true);
+        micro.setGravity(Gravity.START);
+        micro.setLetterSpacing(.13f);
+        page.addView(micro, fullButtonParams());
+        spacer(page, 15);
+        TextView headline = label("An assistant\nthat feels alive.", 36, white, true);
+        headline.setGravity(Gravity.START);
+        headline.setLetterSpacing(-.047f);
+        headline.setLineSpacing(dp(3), 1f);
+        page.addView(headline, fullButtonParams());
+        spacer(page, 13);
+        TextView description = label(
+                "Talk naturally, open installed apps, and control supported "
+                + "phone features from one beautifully simple space.",
+                14, muted, false);
+        description.setGravity(Gravity.START);
+        description.setLineSpacing(dp(5), 1f);
+        page.addView(description, fullButtonParams());
+        spacer(page, 25);
 
-        LinearLayout rail = new LinearLayout(this);
-        rail.setOrientation(LinearLayout.HORIZONTAL);
-        rail.setGravity(Gravity.CENTER_VERTICAL);
-        rail.setPadding(dp(12), dp(10), dp(12), dp(10));
-        rail.setBackground(panelShape(0xCC071522, 0xFF1B576B, 9));
-        outer.addView(rail, fullButtonParams());
-        TextView local = label("●  LOCAL CORE", 10, cyan, true);
-        local.setGravity(Gravity.START);
-        local.setTypeface(Typeface.MONOSPACE);
-        rail.addView(local, new LinearLayout.LayoutParams(0, -2, 1f));
-        TextView battery = label("POWER  " + (getBatteryPercent() < 0
-                ? "--" : getBatteryPercent() + "%"), 10, 0xFFFFC77D, true);
-        battery.setTypeface(Typeface.MONOSPACE);
-        rail.addView(battery);
-        spacer(outer, 15);
+        Button listen = button("●   Start listening   ↗", white);
+        listen.setTextColor(0xFF080808);
+        listen.setTextSize(15);
+        listen.setPadding(dp(17), dp(18), dp(17), dp(18));
+        listen.setBackground(panelShape(white, white, 24));
+        listen.setContentDescription("Start one foreground speech recognition session");
+        page.addView(listen, fullButtonParams());
+        listen.setOnClickListener(v -> startVoice());
+        spacer(page, 10);
+        Button browse = button("Browse installed apps   →", 0xFF171717);
+        browse.setTextSize(14);
+        browse.setBackground(panelShape(0xFF171717, border, 24));
+        browse.setOnClickListener(v -> showInstalledApps());
+        page.addView(browse, fullButtonParams());
+        spacer(page, 25);
 
-        TextView orbKicker = label("◌    A R C   I N T E L L I G E N C E   C O R E    ◌",
-                10, muted, true);
-        orbKicker.setTypeface(Typeface.MONOSPACE);
-        outer.addView(orbKicker);
-        spacer(outer, 6);
+        // One large featured effect card, like the examples at Libraries.dev.
+        LinearLayout featured = new LinearLayout(this);
+        featured.setOrientation(LinearLayout.VERTICAL);
+        featured.setGravity(Gravity.CENTER_HORIZONTAL);
+        featured.setPadding(dp(14), dp(19), dp(14), dp(21));
+        featured.setBackground(panelShape(0xFF101113, 0xFF353638, 25));
+        page.addView(featured, fullButtonParams());
+        LinearLayout featuredHeader = new LinearLayout(this);
+        featuredHeader.setGravity(Gravity.CENTER_VERTICAL);
+        featured.addView(featuredHeader, fullButtonParams());
+        TextView featureName = label("VOICE / REACTOR", 11, 0xFFF1F1F1, true);
+        featureName.setGravity(Gravity.START);
+        featuredHeader.addView(featureName, new LinearLayout.LayoutParams(0, -2, 1f));
+        TextView featurePill = label("NATIVE EFFECT", 9, 0xFFB6DDDF, true);
+        featurePill.setPadding(dp(9), dp(7), dp(9), dp(7));
+        featurePill.setBackground(panelShape(0xFF1B282A, 0xFF375158, 17));
+        featuredHeader.addView(featurePill);
 
         orb = new FridayOrbView(this);
-        int widthDp = (int) (getResources().getDisplayMetrics().widthPixels
+        int screenDp = (int) (getResources().getDisplayMetrics().widthPixels
                 / getResources().getDisplayMetrics().density);
-        int orbSize = Math.max(248, Math.min(340, widthDp - 44));
-        outer.addView(orb, new LinearLayout.LayoutParams(dp(orbSize), dp(orbSize)));
+        int coreSize = Math.max(218, Math.min(302, screenDp - 95));
+        featured.addView(orb, new LinearLayout.LayoutParams(dp(coreSize), dp(coreSize)));
+        stateLabel = label("STANDBY", 15, cyan, true);
+        stateLabel.setLetterSpacing(.14f);
+        featured.addView(stateLabel);
+        spacer(featured, 8);
+        TextView privacy = label("Microphone off until you tap Start listening", 11, muted, false);
+        featured.addView(privacy);
+        spacer(page, 25);
 
-        stateLabel = label("STANDBY", 17, cyan, true);
-        stateLabel.setTypeface(Typeface.create("monospace", Typeface.BOLD));
-        stateLabel.setLetterSpacing(0.21f);
-        outer.addView(stateLabel);
-        spacer(outer, 5);
-        TextView context = label("SYSTEM AWAITING DIRECT COMMAND", 10, muted, false);
-        context.setLetterSpacing(0.1f);
-        outer.addView(context);
-        spacer(outer, 21);
+        TextView section = label("Made for the things you do.", 24, white, true);
+        section.setGravity(Gravity.START);
+        page.addView(section, fullButtonParams());
+        spacer(page, 5);
+        TextView sectionSubtitle = label("One tap, one action. No hidden automation.", 12, muted, false);
+        sectionSubtitle.setGravity(Gravity.START);
+        page.addView(sectionSubtitle, fullButtonParams());
+        spacer(page, 16);
 
-        // Speech providers may not have Hindi/Marathi voices installed.
-        TextView languageLabel = label("SPEECH LANGUAGE  /  DEVICE PROVIDER", 10, muted, true);
+        LinearLayout tiles1 = new LinearLayout(this);
+        tiles1.setOrientation(LinearLayout.HORIZONTAL);
+        page.addView(tiles1, fullButtonParams());
+        Button appTile = effectTile("↗\n\nInstalled apps\nOpen WhatsApp, YouTube and more");
+        Button scanTile = effectTile("◉\n\nSystem scan\nRead your device status");
+        LinearLayout.LayoutParams tileLeft = new LinearLayout.LayoutParams(0, dp(142), 1f);
+        tileLeft.rightMargin = dp(9);
+        tiles1.addView(appTile, tileLeft);
+        tiles1.addView(scanTile, new LinearLayout.LayoutParams(0, dp(142), 1f));
+        appTile.setOnClickListener(v -> showInstalledApps());
+        scanTile.setOnClickListener(v -> handleCommand(CommandRouter.Action.STATUS, true));
+        spacer(page, 9);
+
+        LinearLayout tiles2 = new LinearLayout(this);
+        tiles2.setOrientation(LinearLayout.HORIZONTAL);
+        page.addView(tiles2, fullButtonParams());
+        Button wifiTile = effectTile("⌘\n\nWi-Fi settings\nOpen Android controls");
+        Button batteryTile = effectTile("◫\n\nBattery check\nInspect power level");
+        LinearLayout.LayoutParams tileLeft2 = new LinearLayout.LayoutParams(0, dp(142), 1f);
+        tileLeft2.rightMargin = dp(9);
+        tiles2.addView(wifiTile, tileLeft2);
+        tiles2.addView(batteryTile, new LinearLayout.LayoutParams(0, dp(142), 1f));
+        wifiTile.setOnClickListener(v -> handleCommand(CommandRouter.Action.OPEN_WIFI, true));
+        batteryTile.setOnClickListener(v -> handleCommand(CommandRouter.Action.BATTERY, true));
+        spacer(page, 28);
+
+        TextView languageLabel = label("Speak your language", 23, white, true);
         languageLabel.setGravity(Gravity.START);
-        languageLabel.setTypeface(Typeface.MONOSPACE);
-        outer.addView(languageLabel, fullButtonParams());
-        spacer(outer, 7);
+        page.addView(languageLabel, fullButtonParams());
+        spacer(page, 5);
+        TextView languageHelp = label("English, Hindi and Marathi, based on your phone's speech provider.",
+                12, muted, false);
+        languageHelp.setGravity(Gravity.START);
+        page.addView(languageHelp, fullButtonParams());
+        spacer(page, 13);
         Spinner languages = new Spinner(this);
         ArrayAdapter<String> languageAdapter = new ArrayAdapter<>(this,
                 android.R.layout.simple_spinner_item, new String[] {
-                "Device language (default)", "English (India)", "हिन्दी · Hindi",
+                "Device default", "English (India)", "हिन्दी · Hindi",
                 "मराठी · Marathi" });
         languageAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         languages.setAdapter(languageAdapter);
-        languages.setBackground(panelShape(0xFF102C3A, 0xFF347D91, 9));
-        languages.setPadding(dp(12), dp(6), dp(8), dp(6));
-        languages.setContentDescription("Select speech recognition and voice language");
-        outer.addView(languages, new LinearLayout.LayoutParams(-1, dp(49)));
+        languages.setBackground(panelShape(0xFF191919, 0xFF464646, 15));
+        languages.setPadding(dp(15), dp(9), dp(10), dp(9));
+        languages.setContentDescription("Select voice input and response language");
+        page.addView(languages, new LinearLayout.LayoutParams(-1, dp(53)));
         languages.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override public void onItemSelected(AdapterView<?> parent, View selected,
+            @Override public void onItemSelected(AdapterView<?> parent, View view,
                     int position, long id) {
                 speechLocale = position == 1 ? new Locale("en", "IN")
                         : position == 2 ? new Locale("hi", "IN")
-                        : position == 3 ? new Locale("mr", "IN")
-                        : Locale.getDefault();
-                if (textToSpeech != null && speakingReady) {
+                        : position == 3 ? new Locale("mr", "IN") : Locale.getDefault();
+                if (textToSpeech != null) {
                     int result = textToSpeech.setLanguage(speechLocale);
                     speakingReady = result != TextToSpeech.LANG_MISSING_DATA
                             && result != TextToSpeech.LANG_NOT_SUPPORTED;
@@ -183,138 +247,97 @@ public class MainActivity extends Activity {
             }
             @Override public void onNothingSelected(AdapterView<?> parent) { }
         });
-        spacer(outer, 14);
+        spacer(page, 27);
 
-        Button listen = button("◉   INITIALIZE VOICE LINK", 0xFF09485A);
-        listen.setContentDescription("Tap to start Android speech recognition");
-        listen.setTextSize(14);
-        listen.setPadding(dp(12), dp(17), dp(12), dp(17));
-        outer.addView(listen, fullButtonParams());
-        listen.setOnClickListener(view -> startVoice());
-        spacer(outer, 21);
-
-        TextView inTitle = label("01  /  INPUT TRANSCRIPT", 10, cyan, true);
-        inTitle.setGravity(Gravity.START);
-        inTitle.setTypeface(Typeface.MONOSPACE);
-        outer.addView(inTitle, fullButtonParams());
-        spacer(outer, 7);
-        transcriptLabel = label("Awaiting voice or typed input…", 13,
-                0xFFCFEBF6, false);
-        transcriptLabel.setGravity(Gravity.START | Gravity.CENTER_VERTICAL);
-        transcriptLabel.setPadding(dp(14), dp(13), dp(14), dp(13));
-        transcriptLabel.setBackground(panelShape(0xCF081924, 0xFF25566A, 11));
-        outer.addView(transcriptLabel, fullButtonParams());
-        spacer(outer, 14);
-
-        TextView outTitle = label("02  /  FRIDAY RESPONSE", 10, cyan, true);
-        outTitle.setGravity(Gravity.START);
-        outTitle.setTypeface(Typeface.MONOSPACE);
-        outer.addView(outTitle, fullButtonParams());
-        spacer(outer, 7);
-        replyLabel = label("All local systems standing by. Microphone is off.", 14,
-                0xFFF0FBFF, false);
-        replyLabel.setGravity(Gravity.START | Gravity.CENTER_VERTICAL);
-        replyLabel.setLineSpacing(dp(4), 1.05f);
-        replyLabel.setPadding(dp(16), dp(17), dp(16), dp(17));
-        replyLabel.setBackground(panelShape(0xF0092031, 0xFF327C8F, 12));
-        outer.addView(replyLabel, fullButtonParams());
-        spacer(outer, 20);
-
-        TextView quickTitle = label("QUICK EXECUTION  /  ALLOWLISTED", 10, muted, true);
-        quickTitle.setTypeface(Typeface.MONOSPACE);
-        quickTitle.setGravity(Gravity.START);
-        outer.addView(quickTitle, fullButtonParams());
-        spacer(outer, 9);
-        LinearLayout quick = new LinearLayout(this);
-        quick.setOrientation(LinearLayout.HORIZONTAL);
-        outer.addView(quick, fullButtonParams());
-        Button status = button("SYSTEM SCAN", 0xFF102B3A);
-        Button wifi = button("WIFI", 0xFF102B3A);
-        Button time = button("TIME", 0xFF102B3A);
-        LinearLayout.LayoutParams cell = new LinearLayout.LayoutParams(0, dp(49), 1f);
-        cell.setMargins(0, 0, dp(7), 0);
-        quick.addView(status, cell);
-        LinearLayout.LayoutParams cell2 = new LinearLayout.LayoutParams(0, dp(49), 1f);
-        cell2.setMargins(0, 0, dp(7), 0);
-        quick.addView(wifi, cell2);
-        quick.addView(time, new LinearLayout.LayoutParams(0, dp(49), 1f));
-        status.setOnClickListener(view -> handleCommand(CommandRouter.Action.STATUS, true));
-        wifi.setOnClickListener(view -> handleCommand(CommandRouter.Action.OPEN_WIFI, true));
-        time.setOnClickListener(view -> handleCommand(CommandRouter.Action.TIME, true));
-        spacer(outer, 16);
-        Button apps = button("◫   LAUNCH INSTALLED APP  →", 0xFF163448);
-        apps.setContentDescription("Select an installed application to launch");
-        apps.setOnClickListener(view -> showInstalledApps());
-        outer.addView(apps, fullButtonParams());
-        TextView appsHint = label("TRY: OPEN WHATSAPP · OPEN YOUTUBE · व्हाट्सएप खोलो", 10, muted, false);
-        appsHint.setGravity(Gravity.START);
-        appsHint.setPadding(0, dp(8), 0, 0);
-        outer.addView(appsHint, fullButtonParams());
-        spacer(outer, 22);
-
-        TextView consoleTitle = label("03  /  COMMAND TERMINAL", 10, cyan, true);
-        consoleTitle.setTypeface(Typeface.MONOSPACE);
-        consoleTitle.setGravity(Gravity.START);
-        outer.addView(consoleTitle, fullButtonParams());
-        spacer(outer, 8);
+        TextView transcriptTitle = label("Your conversation", 24, white, true);
+        transcriptTitle.setGravity(Gravity.START);
+        page.addView(transcriptTitle, fullButtonParams());
+        spacer(page, 12);
+        transcriptLabel = label("Say “open WhatsApp” or “what time is it?”", 13, muted, false);
+        transcriptLabel.setGravity(Gravity.START);
+        transcriptLabel.setPadding(dp(16), dp(14), dp(16), dp(14));
+        transcriptLabel.setBackground(panelShape(0xFF161616, border, 16));
+        page.addView(transcriptLabel, fullButtonParams());
+        spacer(page, 9);
+        replyLabel = label("FRIDAY is ready. Microphone off.", 14, white, false);
+        replyLabel.setLineSpacing(dp(4), 1f);
+        replyLabel.setGravity(Gravity.START);
+        replyLabel.setPadding(dp(17), dp(19), dp(17), dp(19));
+        replyLabel.setBackground(panelShape(0xFF1D2022, 0xFF424749, 16));
+        page.addView(replyLabel, fullButtonParams());
+        spacer(page, 12);
         manualInput = new EditText(this);
         manualInput.setSingleLine(true);
-        manualInput.setTextColor(Color.WHITE);
-        manualInput.setHintTextColor(0xFF7F9AAC);
-        manualInput.setHint("Open WhatsApp, YouTube, or another app...");
-        manualInput.setTextSize(13);
-        manualInput.setPadding(dp(15), dp(13), dp(15), dp(13));
-        manualInput.setBackground(panelShape(0xFF061623, 0xFF245568, 9));
-        outer.addView(manualInput, fullButtonParams());
-        spacer(outer, 8);
-        Button execute = button("EXECUTE COMMAND   →", 0xFF164258);
-        outer.addView(execute, fullButtonParams());
-        execute.setOnClickListener(view -> runTranscript(manualInput.getText().toString()));
-        spacer(outer, 26);
+        manualInput.setTextColor(white);
+        manualInput.setHintTextColor(muted);
+        manualInput.setHint("Type a command or an app name…");
+        manualInput.setTextSize(14);
+        manualInput.setPadding(dp(16), dp(14), dp(16), dp(14));
+        manualInput.setBackground(panelShape(0xFF141414, 0xFF464646, 14));
+        page.addView(manualInput, fullButtonParams());
+        spacer(page, 10);
+        Button execute = button("Run command   ↗", white);
+        execute.setTextColor(0xFF090909);
+        execute.setBackground(panelShape(white, white, 25));
+        execute.setOnClickListener(v -> runTranscript(manualInput.getText().toString()));
+        page.addView(execute, fullButtonParams());
+        spacer(page, 26);
 
-        // Technical controls are real and accessible, but not the focal point.
-        Button diagnosticsToggle = button("▤   DIAGNOSTICS & ASSISTANT SETTINGS   ▾", 0xFF132437);
-        outer.addView(diagnosticsToggle, fullButtonParams());
-        spacer(outer, 10);
+        Button diagnosticsToggle = button("Assistant settings & diagnostics   ▾", 0xFF171717);
+        diagnosticsToggle.setBackground(panelShape(0xFF171717, border, 20));
+        page.addView(diagnosticsToggle, fullButtonParams());
+        spacer(page, 10);
         LinearLayout diagnostics = new LinearLayout(this);
         diagnostics.setOrientation(LinearLayout.VERTICAL);
-        diagnostics.setPadding(dp(13), dp(15), dp(13), dp(15));
-        diagnostics.setBackground(panelShape(0xFF071521, 0xFF25516A, 10));
+        diagnostics.setPadding(dp(16), dp(16), dp(16), dp(16));
+        diagnostics.setBackground(panelShape(0xFF111111, border, 19));
         diagnostics.setVisibility(View.GONE);
-        outer.addView(diagnostics, fullButtonParams());
+        page.addView(diagnostics, fullButtonParams());
         diagnosticsToggle.setOnClickListener(v -> {
             boolean expand = diagnostics.getVisibility() != View.VISIBLE;
             diagnostics.setVisibility(expand ? View.VISIBLE : View.GONE);
             diagnosticsToggle.setText(expand
-                    ? "▤   HIDE DIAGNOSTICS   ▴"
-                    : "▤   DIAGNOSTICS & ASSISTANT SETTINGS   ▾");
+                    ? "Hide assistant settings   ▴" : "Assistant settings & diagnostics   ▾");
         });
-        serviceLabel = label("Checking speech services…", 12, muted, false);
+        serviceLabel = label("Checking local speech services…", 12, muted, false);
         serviceLabel.setGravity(Gravity.START);
-        serviceLabel.setLineSpacing(dp(3), 1f);
-        diagnostics.addView(serviceLabel);
+        diagnostics.addView(serviceLabel, fullButtonParams());
         spacer(diagnostics, 12);
-        Button systems = button("RUN ALL SYSTEM CHECKS", 0xFF18394B);
-        diagnostics.addView(systems, fullButtonParams());
-        systems.setOnClickListener(v -> handleCommand(CommandRouter.Action.STATUS, false));
+        Button status = button("Check all systems", 0xFF272727);
+        status.setBackground(panelShape(0xFF272727, border, 15));
+        status.setOnClickListener(v -> handleCommand(CommandRouter.Action.STATUS, false));
+        diagnostics.addView(status, fullButtonParams());
         spacer(diagnostics, 9);
-        Button assistant = button("SET DEFAULT ASSISTANT", 0xFF1D344A);
-        diagnostics.addView(assistant, fullButtonParams());
+        Button assistant = button("Set as default assistant", 0xFF272727);
+        assistant.setBackground(panelShape(0xFF272727, border, 15));
         assistant.setOnClickListener(v -> requestAssistantRole());
-        spacer(diagnostics, 12);
-        TextView limits = label("DEVICE MODE / LOCAL COMMANDS ONLY\n"
-                + "No background hotword, LiveKit connection, or AI reasoning in this APK. "
-                + "Android speech recognition and TTS depend on installed system providers. "
-                + "Microphone access is requested only when you tap Voice Link.", 11, muted, false);
-        limits.setGravity(Gravity.START);
-        limits.setLineSpacing(dp(4), 1f);
-        diagnostics.addView(limits);
+        diagnostics.addView(assistant, fullButtonParams());
+        spacer(diagnostics, 13);
+        TextView disclosure = label(
+                "This Android companion supports foreground speech and local commands only. "
+                + "It is not connected to a cloud AI model, and it does not listen in the background. "
+                + "Your phone's speech/TTS provider may use network services.",
+                11, muted, false);
+        disclosure.setGravity(Gravity.START);
+        disclosure.setLineSpacing(dp(3), 1f);
+        diagnostics.addView(disclosure, fullButtonParams());
+        spacer(page, 23);
+        TextView foot = label("FRIDAY OS  ·  INSPIRED BY MODERN UI EFFECT GALLERIES", 10,
+                0xFF848484, false);
+        foot.setGravity(Gravity.CENTER);
+        page.addView(foot, fullButtonParams());
+    }
 
-        spacer(outer, 19);
-        TextView footer = label("FRIDAY // LOCAL DEVICE INTERFACE  •  v0.2 HUD", 10,
-                0xFF5F879A, false);
-        footer.setTypeface(Typeface.MONOSPACE);
-        outer.addView(footer);
+    private Button effectTile(String text) {
+        Button tile = new Button(this);
+        tile.setAllCaps(false);
+        tile.setGravity(Gravity.TOP | Gravity.START);
+        tile.setText(text);
+        tile.setTextSize(12);
+        tile.setTextColor(0xFFEDEDED);
+        tile.setPadding(dp(14), dp(14), dp(11), dp(9));
+        tile.setBackground(panelShape(0xFF171717, 0xFF333333, 20));
+        return tile;
     }
 
     private GradientDrawable panelShape(int fill, int stroke, int radiusDp) {
