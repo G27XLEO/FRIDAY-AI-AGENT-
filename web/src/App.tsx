@@ -220,7 +220,7 @@ export default function App() {
     <div className="shell">
       <aside className="sidebar">
         <button className="brand brand-button" onClick={() => setView('overview')} aria-label="FRIDAY home">
-          <span className="brand-icon"><Bot size={25} /></span> FRIDAY <em>OS</em>
+          <span className="brand-icon"><Bot size={25} /></span> FRIDAY <em>ARC</em>
         </button>
         <p className="nav-label">MISSION CONTROL</p>
         <nav aria-label="Primary navigation">
@@ -243,7 +243,7 @@ export default function App() {
         <header className="topbar">
           <div className="breadcrumb">FRIDAY <span>/</span> Mission Control <span>/</span> {view === 'overview' ? 'Overview' : view === 'missions' ? 'Missions' : 'Activity'}</div>
           <div className="top-actions">
-            <button className="wake-top-launch" onClick={openWake} aria-label="Open FRIDAY wake orb demo"><Sparkles size={16} /> Wake orb</button>
+            <button className="wake-top-launch" onClick={openWake} aria-label="Open FRIDAY JARVIS-inspired ARC HUD preview"><Sparkles size={16} /> ARC HUD</button>
             <span className="connect online"><span className="dot" /> STANDALONE PREVIEW</span>
             <button className="icon-button" onClick={() => setHelp(value => !value)}
               aria-label="About standalone mode" aria-expanded={help}><Info size={18} /></button>
@@ -261,22 +261,34 @@ export default function App() {
         {view === 'overview' && (
           <>
             <div className="intro">
-              <span className="eyebrow">INTERFACE SANDBOX / FRIDAY OS 2</span>
-              <h1>Mission Control<span className="aqua">.</span></h1>
-              <p>A command center designed for an intelligent future. Explore the interface offline.</p>
+              <span className="eyebrow">ARC SYSTEMS / FRIDAY OS 3</span>
+              <h1>ARC Mission Control<span className="aqua">.</span></h1>
+              <p>JARVIS-inspired tactical interface powered by Libraries.dev visual effects. Local preview only.</p>
             </div>
             <section className="hero" aria-label="FRIDAY design preview">
               <BorderBeam size="md" colorVariant="ocean" strength={0.65} active={orbState !== 'breathing'}>
                 <div className="core panel">
-                  <div className="overline"><span className="dot" /> CORE VISUALIZER / PREVIEW ONLY</div>
-                  <div className="orb-stage"><ThinkingOrb state={orbState} size={64} /></div>
+                  <div className="overline"><span className="dot" /> A.R.C. REACTOR / LOCAL DEMO</div>
+                  <div className="wake-reactor compact-reactor" aria-label="Animated FRIDAY reactor preview">
+                    <div className="wake-reactor-aura" />
+                    <div className="wake-reactor-dial" />
+                    <div className="wake-reactor-ticks" />
+                    <div className="wake-reactor-ring wake-ring-a" />
+                    <div className="wake-reactor-ring wake-ring-b" />
+                    <div className="wake-reactor-ring wake-ring-c" />
+                    <div className="wake-reactor-inner"><ThinkingOrb state={orbState} size={64} /></div>
+                    <span className="wake-reactor-cross wake-cross-top" />
+                    <span className="wake-reactor-cross wake-cross-bottom" />
+                    <span className="wake-reactor-cross wake-cross-left" />
+                    <span className="wake-reactor-cross wake-cross-right" />
+                  </div>
                   <MetalText font="600 26px/1.2 Inter" color="#E7F8FF">FRIDAY</MetalText>
                   <h2>{orbState === 'breathing' ? 'STANDBY' : orbState === 'working' ? 'ACTIVE PREVIEW' : 'THINKING PREVIEW'}</h2>
                   <p>{orbDescription} · No microphone or AI connected</p>
                   <button className="wake-main-launch" onClick={openWake}>
-                    <Sparkles size={17} /> Simulate "Hey FRIDAY" <ArrowUpRight size={16} />
+                    <Sparkles size={17} /> Launch A.R.C. HUD <ArrowUpRight size={16} />
                   </button>
-                  <div className="wake-hint">Siri-inspired full-screen wake experience · Touch or Alt+F</div>
+                  <div className="wake-hint">JARVIS-inspired A.R.C. command HUD · Touch or Alt+F</div>
                   <div className="preview-switch" role="group" aria-label="Visualizer preview state">
                     {previews.map(item => <button key={item.state}
                       aria-pressed={orbState === item.state}
