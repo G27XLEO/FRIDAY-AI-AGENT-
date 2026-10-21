@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-"""Lightweight NLP preprocessing for FRIDAY voice requests.
+"""Conservative, dependency-free multilingual NLP hints for FRIDAY.
 
-The module deliberately avoids a heavyweight NLP model in the realtime path.
-It normalizes speech transcripts, extracts a small amount of intent metadata,
-and produces a compact context block for the reasoning model.
+These hints are NOT authorizations for tools or a replacement for an LLM.
+Supported intent keywords: English (en), Hindi (hi), Marathi (mr).
 """
 
 import re
+import unicodedata
 from dataclasses import dataclass
 
 
@@ -18,103 +18,117 @@ class NLPResult:
     intent: str
     urgency: str
     entities: tuple[str, ...]
+    language: str = "en"
 
 
 _INTENT_PATTERNS: tuple[tuple[str, tuple[str, ...]], ...] = (
-    ("status", ("status", "health", "online", "running", "system check")),
-    ("planning", ("plan", "planning", "steps", "roadmap", "how should i")),
-    ("code", ("code", "script", "program", "debug", "error", "repository", "github")),
-    ("web", ("search", "look up", "find online", "website", "url", "latest")),
-    ("file", ("file", "folder", "directory", "read", "write", "edit")),
-    ("memory", ("remember", "recall", "forget", "memory")),
+    ("status", (
+        "status", "health", "online", "running", "system check",
+        "सिस्टम की स्थिति", "सिस्टम चेक", "सिस्टम की जांच",
+        "सिस्टमची स्थिती", "सिस्टम तपासा", "स्थिती",
+    )),
+    ("planning", (
+        "plan", "planning", "steps", "roadmap", "how should i",
+        "योजना", "प्लान बनाओ", "कैसे करें", "कदम",
+        "नियोजन", "आराखडा", "कसे करावे", "पायऱ्या",
+    )),
+    ("code", (
+        "code", "script", "program", "debug", "error", "repository", "github",
+        "कोड", "त्रुटि", "प्रोग्राम", "रिपॉजिटरी", "त्रुटी",
+    )),
+    ("web", (
+        "search", "look up", "find online", "website", "url", "latest",
+        "इंटरनेट पर खोजो", "वेबसाइट", "ताज़ा",
+        "इंटरनेटवर शोधा", "शोधा", "ताज्या",
+    )),
+    ("file", (
+        "file", "folder", "directory", "read", "write", "edit",
+        "फ़ाइल", "फाइल", "फ़ोल्डर", "पढ़ो", "लिखो",
+        "फाईल", "फोल्डर", "वाचा", "लिहा", "संपादित करा",
+    )),
+    ("memory", (
+        "remember", "recall", "forget", "memory",
+        "याद रखो", "याद दिलाओ", "भूल जाओ", "याद",
+        "लक्षात ठेव", "आठवण", "विसर",
+    )),
 )
 
-_URGENT_WORDS = {"urgent", "asap", "immediately", "critical", "emergency"}
+_URGENT_WORDS = (
+    "urgent", "asap", "immediately", "critical", "emergency",
+    "तुरंत", "जल्दी", "आपातकाल", "अत्यावश्यक",
+    "तातडीने", "लवकर", "आपत्कालीन",
+)
+_MARATHI_MARKERS = (
+    "काय", "आहे", "आहेत", "माझा", "माझी", "मला", "कृपया",
+    "उघडा", "उघड", "तपासा", "सांगा", "करा", "शोधा", "नियोजन",
+    "कसे", "पायऱ्या", "तातडीने", "लवकर", "स्थिती",
+)
+_HINDI_MARKERS = (
+    "क्या", "है", "हैं", "मेरी", "मेरा", "मुझे", "खोलो",
+    "बताओ", "करो", "ढूंढो", "योजना", "तुरंत", "जल्दी",
+    "स्थिति", "जांच",
+)
+_URL = re.compile(r"https?://[^\s\)]+", re.IGNORECASE)
 
 
 def _normalize(text: str) -> str:
-    """Normalize text: strip, collapse whitespace, convert to lowercase."""
-    if not text:
-        return ""
-    text = text.strip()
-    text = re.sub(r"\s+", " ", text)
-    return text.casefold()
+    return re.sub(r"\s+", " ", unicodedata.normalize("NFC", text).strip()).casefold()
+
+
+def _contains_phrase(text: str, term: str) -> bool:
+    """Match complete words/phrases, including Devanagari combining marks."""
+    term = re.escape(term)
+    return bool(re.search(r"(?<!\w)" + term + r"(?!\w)", text, re.UNICODE))
+
+
+def detect_language(text: str) -> str:
+    """Best-effort language hint; mixed/ambiguous Devanagari defaults to Hindi."""
+    normalized = _normalize(text)
+    if not re.search(r"[\u0900-\u097f]", normalized):
+        return "en"
+    marathi = sum(_contains_phrase(normalized, word) for word in _MARATHI_MARKERS)
+    hindi = sum(_contains_phrase(normalized, word) for word in _HINDI_MARKERS)
+    return "mr" if marathi > hindi else "hi"
 
 
 def _intent(text: str) -> str:
-    """Extract intent from normalized text using keyword matching.
-    
-    Matches on word boundaries to avoid partial matches.
-    Returns the first matching intent, or 'general' if no match.
-    """
-    if not text:
-        return "general"
-    
-    for intent, keywords in _INTENT_PATTERNS:
-        for keyword in keywords:
-            # Use word boundary matching to avoid substring matches
-            pattern = r'\b' + re.escape(keyword) + r'\b'
-            if re.search(pattern, text, flags=re.IGNORECASE):
-                return intent
+    for intent, terms in _INTENT_PATTERNS:
+        if any(_contains_phrase(text, term) for term in terms):
+            return intent
     return "general"
 
 
 def _entities(text: str) -> tuple[str, ...]:
-    """Extract named entities (URLs, mentions, known services).
-    
-    Searches the original (non-normalized) text to preserve exact formatting.
-    Limits results to 12 entities to keep output compact.
-    """
-    if not text:
-        return ()
-    
     found: list[str] = []
-    patterns = (
-        r"https?://[^\s\)]+",  # URLs with boundary checking
-        r"@[A-Za-z0-9_.-]+",
-        r"\b(?:FRIDAY|GitHub|LiveKit|Groq|ElevenLabs|MCP|Termux)\b",
-    )
-    for pattern in patterns:
-        for match in re.findall(pattern, text, flags=re.IGNORECASE):
-            if match not in found:
-                found.append(match)
+    for pattern in (
+        _URL, re.compile(r"@[A-Za-z0-9_.-]+"),
+        re.compile(r"\b(?:FRIDAY|GitHub|LiveKit|Groq|ElevenLabs|MCP|Termux)\b", re.I)
+    ):
+        for match in pattern.finditer(text):
+            entity = match.group(0)
+            if entity not in found:
+                found.append(entity)
     return tuple(found[:12])
 
 
 def analyze(text: str) -> NLPResult:
-    """Normalize a transcript and extract lightweight intent/entities.
-    
-    Handles empty/whitespace-only input gracefully.
-    """
-    text = text.strip() if text else ""
-    normalized = _normalize(text)
-    entities = _entities(text)
-
-    # If a URL is present, prefer the 'web' intent even if no web keywords appear.
-    if any(e.lower().startswith("http") for e in entities):
-        intent = "web"
-    else:
-        intent = _intent(normalized)
-
-    urgency = "high" if any(word in normalized for word in _URGENT_WORDS) else "normal"
+    original = text.strip() if text else ""
+    normalized = _normalize(original)
+    entities = _entities(original)
+    intent = "web" if any(entity.lower().startswith("http") for entity in entities) else _intent(normalized)
+    urgency = "high" if any(_contains_phrase(normalized, term) for term in _URGENT_WORDS) else "normal"
     return NLPResult(
-        text=text,
-        normalized=normalized,
-        intent=intent,
-        urgency=urgency,
-        entities=entities,
+        text=original, normalized=normalized, intent=intent,
+        urgency=urgency, entities=entities, language=detect_language(original),
     )
 
 
 def build_context(text: str) -> str:
-    """Create compact structured NLP context for the LLM prompt.
-    
-    Handles empty input by returning a minimal valid context block.
-    """
     result = analyze(text)
     entities = ", ".join(result.entities) if result.entities else "none"
     return (
         "NLP CONTEXT\n"
+        f"language={result.language}\n"
         f"intent={result.intent}\n"
         f"urgency={result.urgency}\n"
         f"entities={entities}\n"
