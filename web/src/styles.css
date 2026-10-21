@@ -107,3 +107,25 @@ button:disabled{cursor:not-allowed;opacity:.5}
   .wake-top-launch svg{width:14px;height:14px}
   .wake-hint{max-width:220px}
 }
+
+
+/* ARC v3: polished cyan HUD around existing Libraries.dev components */
+:root{--arc:#75e7f9;--arc-deep:#0b3448}
+.shell{background:radial-gradient(ellipse 65% 50% at 64% 12%,#0c35463f,transparent),#040c14}
+.sidebar{background:linear-gradient(160deg,#061827,#030a12);border-right-color:#18445a}
+.brand{color:#ebfcff;letter-spacing:.07em}.brand em{color:var(--arc)}
+.sidebar nav button.selected{background:linear-gradient(105deg,#104156,#0a2638);border-color:#2a819c}
+.topbar{border-bottom-color:#1b5263}
+.panel{border-color:#235568;background:linear-gradient(150deg,#0b1d2ddf,#061320e8)}
+.intro .eyebrow,.core .overline{font-family:ui-monospace,Consolas,monospace;color:#82eaff}
+.intro h1{letter-spacing:-.055em}
+.core{position:relative;background:radial-gradient(circle at 50% 32%,#0e405180,#05131d 65%);border-color:#31738b}
+.core .compact-reactor{width:min(100%,280px);flex:none;margin:3px auto 4px;filter:drop-shadow(0 0 15px #31c9ed36)}
+.core .compact-reactor .wake-reactor-inner{display:flex;align-items:center;justify-content:center}
+.core .compact-reactor .wake-reactor-inner>div{position:relative;z-index:2}
+.core h2{color:#9ceefb;font-family:ui-monospace,Consolas,monospace}
+.wake-top-launch,.wake-main-launch{background:linear-gradient(100deg,#0b394b,#0b283c);border-color:#44889c;border-radius:7px}
+.wake-top-launch:hover,.wake-main-launch:hover{border-color:#83edff;background:#155067}
+.stat{border-color:#276079}.stat strong{color:#d9fbff}
+.mission .panel-title,.activity .eyebrow{color:#82e8ef}
+@media(max-width:650px){.core .compact-reactor{width:min(74vw,265px)}}
