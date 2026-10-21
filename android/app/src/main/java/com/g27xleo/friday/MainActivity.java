@@ -69,99 +69,210 @@ public class MainActivity extends Activity {
     }
 
     private void createInterface() {
+        final int cyan = 0xFF67E9F9;
+        final int muted = 0xFF8AAABE;
         ScrollView scroll = new ScrollView(this);
         scroll.setFillViewport(true);
-        GradientDrawable page = new GradientDrawable(
+        scroll.setClipToPadding(false);
+        GradientDrawable background = new GradientDrawable(
                 GradientDrawable.Orientation.TL_BR,
-                new int[] { 0xFF060A17, 0xFF172342, 0xFF080A1A });
-        scroll.setBackground(page);
+                new int[] { 0xFF030912, 0xFF0A1C2A, 0xFF020710 });
+        scroll.setBackground(background);
         setContentView(scroll);
 
         LinearLayout outer = new LinearLayout(this);
         outer.setOrientation(LinearLayout.VERTICAL);
         outer.setGravity(Gravity.CENTER_HORIZONTAL);
-        outer.setPadding(dp(22), dp(25), dp(22), dp(40));
+        outer.setPadding(dp(18), dp(20), dp(18), dp(32));
         scroll.addView(outer);
 
-        outer.addView(label("F R I D A Y   /   SYSTEM ASSISTANT", 12, 0xFF72DAEA, true));
-        spacer(outer, 8);
-        outer.addView(label("Voice Command Center", 27, Color.WHITE, true));
-        spacer(outer, 4);
-        outer.addView(label("Android companion · operator-controlled", 13, 0xFF9EBDD5, false));
-        spacer(outer, 17);
+        // Minimal telemetry rail; no fake network connectivity indicators.
+        LinearLayout top = new LinearLayout(this);
+        top.setGravity(Gravity.CENTER_VERTICAL);
+        top.setOrientation(LinearLayout.HORIZONTAL);
+        outer.addView(top, fullButtonParams());
+        TextView mark = label("◈  F R I D A Y", 17, 0xFFE4FDFF, true);
+        mark.setGravity(Gravity.START | Gravity.CENTER_VERTICAL);
+        mark.setTypeface(Typeface.create("monospace", Typeface.BOLD));
+        top.addView(mark, new LinearLayout.LayoutParams(0, dp(44), 1f));
+        TextView edition = label("O S  /  0 3", 10, cyan, true);
+        edition.setTypeface(Typeface.MONOSPACE);
+        edition.setGravity(Gravity.END | Gravity.CENTER_VERTICAL);
+        top.addView(edition);
+        spacer(outer, 6);
+        TextView subtitle = label("PERSONAL ASSISTANT   //   TACTICAL INTERFACE", 10, muted, false);
+        subtitle.setGravity(Gravity.START);
+        subtitle.setLetterSpacing(0.12f);
+        outer.addView(subtitle, fullButtonParams());
+        spacer(outer, 18);
+
+        LinearLayout rail = new LinearLayout(this);
+        rail.setOrientation(LinearLayout.HORIZONTAL);
+        rail.setGravity(Gravity.CENTER_VERTICAL);
+        rail.setPadding(dp(12), dp(10), dp(12), dp(10));
+        rail.setBackground(panelShape(0xCC071522, 0xFF1B576B, 9));
+        outer.addView(rail, fullButtonParams());
+        TextView local = label("●  LOCAL CORE", 10, cyan, true);
+        local.setGravity(Gravity.START);
+        local.setTypeface(Typeface.MONOSPACE);
+        rail.addView(local, new LinearLayout.LayoutParams(0, -2, 1f));
+        TextView battery = label("POWER  " + (getBatteryPercent() < 0
+                ? "--" : getBatteryPercent() + "%"), 10, 0xFFFFC77D, true);
+        battery.setTypeface(Typeface.MONOSPACE);
+        rail.addView(battery);
+        spacer(outer, 15);
+
+        TextView orbKicker = label("◌    A R C   I N T E L L I G E N C E   C O R E    ◌",
+                10, muted, true);
+        orbKicker.setTypeface(Typeface.MONOSPACE);
+        outer.addView(orbKicker);
+        spacer(outer, 6);
 
         orb = new FridayOrbView(this);
-        outer.addView(orb, new LinearLayout.LayoutParams(dp(295), dp(285)));
-        stateLabel = label("STANDBY", 16, 0xFF88E6FF, true);
-        outer.addView(stateLabel);
-        spacer(outer, 12);
+        int widthDp = (int) (getResources().getDisplayMetrics().widthPixels
+                / getResources().getDisplayMetrics().density);
+        int orbSize = Math.max(248, Math.min(340, widthDp - 44));
+        outer.addView(orb, new LinearLayout.LayoutParams(dp(orbSize), dp(orbSize)));
 
-        Button listen = button("🎙  TAP TO LISTEN", 0xFF20577E);
+        stateLabel = label("STANDBY", 17, cyan, true);
+        stateLabel.setTypeface(Typeface.create("monospace", Typeface.BOLD));
+        stateLabel.setLetterSpacing(0.21f);
+        outer.addView(stateLabel);
+        spacer(outer, 5);
+        TextView context = label("SYSTEM AWAITING DIRECT COMMAND", 10, muted, false);
+        context.setLetterSpacing(0.1f);
+        outer.addView(context);
+        spacer(outer, 21);
+
+        Button listen = button("◉   INITIALIZE VOICE LINK", 0xFF09485A);
+        listen.setContentDescription("Tap to start Android speech recognition");
+        listen.setTextSize(14);
+        listen.setPadding(dp(12), dp(17), dp(12), dp(17));
         outer.addView(listen, fullButtonParams());
         listen.setOnClickListener(view -> startVoice());
-        spacer(outer, 13);
+        spacer(outer, 21);
 
-        transcriptLabel = label("Say 'FRIDAY, check systems' or enter a command.", 13,
-                0xFFCAD9E9, false);
-        transcriptLabel.setGravity(Gravity.CENTER);
-        outer.addView(transcriptLabel);
-        spacer(outer, 10);
+        TextView inTitle = label("01  /  INPUT TRANSCRIPT", 10, cyan, true);
+        inTitle.setGravity(Gravity.START);
+        inTitle.setTypeface(Typeface.MONOSPACE);
+        outer.addView(inTitle, fullButtonParams());
+        spacer(outer, 7);
+        transcriptLabel = label("Awaiting voice or typed input…", 13,
+                0xFFCFEBF6, false);
+        transcriptLabel.setGravity(Gravity.START | Gravity.CENTER_VERTICAL);
+        transcriptLabel.setPadding(dp(14), dp(13), dp(14), dp(13));
+        transcriptLabel.setBackground(panelShape(0xCF081924, 0xFF25566A, 11));
+        outer.addView(transcriptLabel, fullButtonParams());
+        spacer(outer, 14);
 
-        replyLabel = label("Standing by. No microphone active.", 15, 0xFFE5F6FF, false);
-        replyLabel.setGravity(Gravity.CENTER);
-        replyLabel.setPadding(dp(12), dp(12), dp(12), dp(12));
-        GradientDrawable replyBackground = new GradientDrawable();
-        replyBackground.setColor(0x5517263D);
-        replyBackground.setCornerRadius(dp(13));
-        replyBackground.setStroke(dp(1), 0xFF36506B);
-        replyLabel.setBackground(replyBackground);
+        TextView outTitle = label("02  /  FRIDAY RESPONSE", 10, cyan, true);
+        outTitle.setGravity(Gravity.START);
+        outTitle.setTypeface(Typeface.MONOSPACE);
+        outer.addView(outTitle, fullButtonParams());
+        spacer(outer, 7);
+        replyLabel = label("All local systems standing by. Microphone is off.", 14,
+                0xFFF0FBFF, false);
+        replyLabel.setGravity(Gravity.START | Gravity.CENTER_VERTICAL);
+        replyLabel.setLineSpacing(dp(4), 1.05f);
+        replyLabel.setPadding(dp(16), dp(17), dp(16), dp(17));
+        replyLabel.setBackground(panelShape(0xF0092031, 0xFF327C8F, 12));
         outer.addView(replyLabel, fullButtonParams());
         spacer(outer, 20);
 
-        serviceLabel = label("Checking available local services…", 12, 0xFF9AB4C9, false);
-        serviceLabel.setGravity(Gravity.CENTER);
-        outer.addView(serviceLabel);
-        spacer(outer, 16);
-
-        Button systems = button("CHECK ALL AVAILABLE SYSTEMS", 0xFF273B5E);
-        systems.setOnClickListener(view -> handleCommand(CommandRouter.Action.STATUS, true));
-        outer.addView(systems, fullButtonParams());
+        TextView quickTitle = label("QUICK EXECUTION  /  ALLOWLISTED", 10, muted, true);
+        quickTitle.setTypeface(Typeface.MONOSPACE);
+        quickTitle.setGravity(Gravity.START);
+        outer.addView(quickTitle, fullButtonParams());
         spacer(outer, 9);
+        LinearLayout quick = new LinearLayout(this);
+        quick.setOrientation(LinearLayout.HORIZONTAL);
+        outer.addView(quick, fullButtonParams());
+        Button status = button("SYSTEM SCAN", 0xFF102B3A);
+        Button wifi = button("WIFI", 0xFF102B3A);
+        Button time = button("TIME", 0xFF102B3A);
+        LinearLayout.LayoutParams cell = new LinearLayout.LayoutParams(0, dp(49), 1f);
+        cell.setMargins(0, 0, dp(7), 0);
+        quick.addView(status, cell);
+        LinearLayout.LayoutParams cell2 = new LinearLayout.LayoutParams(0, dp(49), 1f);
+        cell2.setMargins(0, 0, dp(7), 0);
+        quick.addView(wifi, cell2);
+        quick.addView(time, new LinearLayout.LayoutParams(0, dp(49), 1f));
+        status.setOnClickListener(view -> handleCommand(CommandRouter.Action.STATUS, true));
+        wifi.setOnClickListener(view -> handleCommand(CommandRouter.Action.OPEN_WIFI, true));
+        time.setOnClickListener(view -> handleCommand(CommandRouter.Action.TIME, true));
+        spacer(outer, 22);
 
-        Button assistant = button("SET AS DEFAULT ASSISTANT", 0xFF303355);
-        assistant.setOnClickListener(view -> requestAssistantRole());
-        outer.addView(assistant, fullButtonParams());
-        spacer(outer, 17);
-
+        TextView consoleTitle = label("03  /  COMMAND TERMINAL", 10, cyan, true);
+        consoleTitle.setTypeface(Typeface.MONOSPACE);
+        consoleTitle.setGravity(Gravity.START);
+        outer.addView(consoleTitle, fullButtonParams());
+        spacer(outer, 8);
         manualInput = new EditText(this);
         manualInput.setSingleLine(true);
         manualInput.setTextColor(Color.WHITE);
-        manualInput.setHintTextColor(0xFF8CA5BB);
-        manualInput.setHint("Try: open WiFi settings");
-        manualInput.setTextSize(14);
-        manualInput.setPadding(dp(14), dp(10), dp(14), dp(10));
-        GradientDrawable inputBackground = new GradientDrawable();
-        inputBackground.setColor(0xFF10192B);
-        inputBackground.setStroke(dp(1), 0xFF425C72);
-        inputBackground.setCornerRadius(dp(10));
-        manualInput.setBackground(inputBackground);
+        manualInput.setHintTextColor(0xFF7F9AAC);
+        manualInput.setHint("Enter an allowed command...");
+        manualInput.setTextSize(13);
+        manualInput.setPadding(dp(15), dp(13), dp(15), dp(13));
+        manualInput.setBackground(panelShape(0xFF061623, 0xFF245568, 9));
         outer.addView(manualInput, fullButtonParams());
-        spacer(outer, 9);
+        spacer(outer, 8);
+        Button execute = button("EXECUTE COMMAND   →", 0xFF164258);
+        outer.addView(execute, fullButtonParams());
+        execute.setOnClickListener(view -> runTranscript(manualInput.getText().toString()));
+        spacer(outer, 26);
 
-        Button type = button("RUN TYPED COMMAND", 0xFF304660);
-        type.setOnClickListener(view -> runTranscript(manualInput.getText().toString()));
-        outer.addView(type, fullButtonParams());
-        spacer(outer, 18);
+        // Technical controls are real and accessible, but not the focal point.
+        Button diagnosticsToggle = button("▤   DIAGNOSTICS & ASSISTANT SETTINGS   ▾", 0xFF132437);
+        outer.addView(diagnosticsToggle, fullButtonParams());
+        spacer(outer, 10);
+        LinearLayout diagnostics = new LinearLayout(this);
+        diagnostics.setOrientation(LinearLayout.VERTICAL);
+        diagnostics.setPadding(dp(13), dp(15), dp(13), dp(15));
+        diagnostics.setBackground(panelShape(0xFF071521, 0xFF25516A, 10));
+        diagnostics.setVisibility(View.GONE);
+        outer.addView(diagnostics, fullButtonParams());
+        diagnosticsToggle.setOnClickListener(v -> {
+            boolean expand = diagnostics.getVisibility() != View.VISIBLE;
+            diagnostics.setVisibility(expand ? View.VISIBLE : View.GONE);
+            diagnosticsToggle.setText(expand
+                    ? "▤   HIDE DIAGNOSTICS   ▴"
+                    : "▤   DIAGNOSTICS & ASSISTANT SETTINGS   ▾");
+        });
+        serviceLabel = label("Checking speech services…", 12, muted, false);
+        serviceLabel.setGravity(Gravity.START);
+        serviceLabel.setLineSpacing(dp(3), 1f);
+        diagnostics.addView(serviceLabel);
+        spacer(diagnostics, 12);
+        Button systems = button("RUN ALL SYSTEM CHECKS", 0xFF18394B);
+        diagnostics.addView(systems, fullButtonParams());
+        systems.setOnClickListener(v -> handleCommand(CommandRouter.Action.STATUS, false));
+        spacer(diagnostics, 9);
+        Button assistant = button("SET DEFAULT ASSISTANT", 0xFF1D344A);
+        diagnostics.addView(assistant, fullButtonParams());
+        assistant.setOnClickListener(v -> requestAssistantRole());
+        spacer(diagnostics, 12);
+        TextView limits = label("DEVICE MODE / LOCAL COMMANDS ONLY\n"
+                + "No background hotword, LiveKit connection, or AI reasoning in this APK. "
+                + "Android speech recognition and TTS depend on installed system providers. "
+                + "Microphone access is requested only when you tap Voice Link.", 11, muted, false);
+        limits.setGravity(Gravity.START);
+        limits.setLineSpacing(dp(4), 1f);
+        diagnostics.addView(limits);
 
-        TextView limits = label(
-                "Only explicit local commands are available: time, date, battery, "
-                + "system status, open settings, WiFi, Bluetooth, display settings, or browser.\n\n"
-                + "The Android speech provider may require internet or process audio "
-                + "according to its own policy. This app has no AI model, LiveKit, "
-                + "background hotword, device administration or unrestricted automation.",
-                12, 0xFF90A8C0, false);
-        limits.setLineSpacing(dp(3), 1f);
-        outer.addView(limits);
+        spacer(outer, 19);
+        TextView footer = label("FRIDAY // LOCAL DEVICE INTERFACE  •  v0.2 HUD", 10,
+                0xFF5F879A, false);
+        footer.setTypeface(Typeface.MONOSPACE);
+        outer.addView(footer);
+    }
+
+    private GradientDrawable panelShape(int fill, int stroke, int radiusDp) {
+        GradientDrawable shape = new GradientDrawable();
+        shape.setColor(fill);
+        shape.setCornerRadius(dp(radiusDp));
+        shape.setStroke(dp(1), stroke);
+        return shape;
     }
 
     private void initializeSpeech() {
