@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - feature/friday-android-companion
+      - feature/jarvis-hud-android
+      - main
   pull_request:
     paths:
       - "android/**"
