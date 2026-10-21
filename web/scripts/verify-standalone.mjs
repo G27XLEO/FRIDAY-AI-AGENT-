@@ -28,9 +28,9 @@ assert.match(app, /localStorage/, 'Local workspace must be saved without a serve
 assert.match(app, /createMission/, 'Manual local mission creation must exist')
 assert.match(app, /toggleStep/, 'Manual step tracking must exist')
 assert.match(app, /<WakeOrb /, 'Wake orb must be wired into dashboard')
-assert.match(wake, /mode === 'listening'/, 'Wake orb must have a listening preview')
-assert.match(wake, /mode === 'thinking'/, 'Wake orb must have a thinking preview')
-assert.match(wake, /mode === 'speaking'/, 'Wake orb must have a speaking preview')
+assert.match(wake, /id: 'listening'/, 'Wake orb must have a listening preview')
+assert.match(wake, /id: 'thinking'/, 'Wake orb must have a thinking preview')
+assert.match(wake, /id: 'speaking'/, 'Wake orb must have a speaking preview')
 assert.match(wake, /Escape/, 'Wake overlay must support keyboard dismiss')
 assert.match(wake, /Microphone off/, 'Wake overlay must disclose demo-only operation')
 
