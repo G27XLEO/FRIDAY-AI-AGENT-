@@ -260,15 +260,25 @@ export default function App() {
 
         {view === 'overview' && (
           <>
-            <div className="intro">
-              <span className="eyebrow">ARC SYSTEMS / FRIDAY OS 3</span>
-              <h1>ARC Mission Control<span className="aqua">.</span></h1>
-              <p>JARVIS-inspired tactical interface powered by Libraries.dev visual effects. Local preview only.</p>
+            <div className="intro lib-intro">
+              <span className="hero-badge"><span className="hero-badge-dot" /> PERSONAL AI INTERFACE <span className="hero-badge-muted">/ LOCAL PREVIEW</span></span>
+              <h1>Beautifully simple.<br /><span className="lib-title-muted">Built for your missions.</span></h1>
+              <p>An AI-inspired workspace with thoughtful motion, vivid effects and effortless control.
+                All visual states are simulated; your missions stay in your browser.</p>
+              <div className="lib-hero-actions">
+                <button className="lib-primary-btn" onClick={openWake}><Sparkles size={16} /> Explore voice interface <ArrowUpRight size={16} /></button>
+                <button className="lib-secondary-btn" onClick={() => setView('missions')}>Open mission planner <ArrowRight size={16} /></button>
+              </div>
+            </div>
+            <div className="lib-section-title">
+              <div><span className="eyebrow">INTERACTIVE EXPERIENCES</span>
+                <h2>Made to feel alive.</h2></div>
+              <span className="lib-caption">Thinking Orbs · Border Beam · Metal FX</span>
             </div>
             <section className="hero" aria-label="FRIDAY design preview">
               <BorderBeam size="md" colorVariant="ocean" strength={0.65} active={orbState !== 'breathing'}>
                 <div className="core panel">
-                  <div className="overline"><span className="dot" /> A.R.C. REACTOR / LOCAL DEMO</div>
+                  <div className="overline"><span className="dot" /> THINKING ORBS / INTERACTIVE SHOWCASE</div>
                   <div className="wake-reactor compact-reactor" aria-label="Animated FRIDAY reactor preview">
                     <div className="wake-reactor-aura" />
                     <div className="wake-reactor-dial" />
@@ -288,7 +298,7 @@ export default function App() {
                   <button className="wake-main-launch" onClick={openWake}>
                     <Sparkles size={17} /> Launch A.R.C. HUD <ArrowUpRight size={16} />
                   </button>
-                  <div className="wake-hint">JARVIS-inspired A.R.C. command HUD · Touch or Alt+F</div>
+                  <div className="wake-hint">FRIDAY voice visual playground · Touch or Alt+F</div>
                   <div className="preview-switch" role="group" aria-label="Visualizer preview state">
                     {previews.map(item => <button key={item.state}
                       aria-pressed={orbState === item.state}
@@ -302,7 +312,7 @@ export default function App() {
                 </div>
               </BorderBeam>
               <article className="mission panel">
-                <div className="panel-title"><span><Zap size={17} /> MISSION DESIGN</span><span className="tag">OFFLINE</span></div>
+                <div className="panel-title"><span><Zap size={17} /> MISSION PLANNER</span><span className="tag">OFFLINE</span></div>
                 <h2>Prepare before you execute.</h2>
                 <p>Shape your next task into clear steps, define what success looks like,
                   and track your progress manually. AI automation remains disconnected.</p>
