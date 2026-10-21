@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<voice-interaction-service xmlns:android="http://schemas.android.com/apk/res/android"
+    android:sessionService="com.g27xleo.friday.FridaySessionService"
+    android:recognitionService=""
+    android:settingsActivity="com.g27xleo.friday.MainActivity"
+    android:supportsAssist="true"
+    android:supportsLocalInteraction="true"
+    android:supportsLaunchVoiceAssistFromKeyguard="false" />
