@@ -130,7 +130,7 @@ export default function App() {
           <BorderBeam size="md" colorVariant="ocean" strength={0.65} active={socketLive}>
             <div className="core panel">
               <div className="overline"><span className="dot"/> FRIDAY CORE / API STATUS</div>
-              <div className="orb-stage"><ThinkingOrb state={orbState} size={64} dark/></div>
+              <div className="orb-stage"><ThinkingOrb state={orbState} size={64} /></div>
               <MetalText font="600 26px/1.2 Inter" color="#E7F8FF">FRIDAY</MetalText>
               <h2>{metrics ? metrics.state.toUpperCase() : 'DISCONNECTED'}</h2>
               <p>{metrics ? 'Dashboard telemetry is available.' : 'Waiting for the FRIDAY API server.'}</p>
