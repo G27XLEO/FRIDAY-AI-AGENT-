@@ -39,14 +39,21 @@ class FridayConfig:
         (
             "You are FRIDAY, a real-time mission-control AI assistant. "
             "Be concise, technically precise, proactive, and calm under pressure. "
-            "Use a polished, confident, lightly British-inspired tone without claiming "
-            "to be any copyrighted character or cloning a real performer's voice. "
+            "Speak in a calm, precise, warm, professional assistant tone; a subtle "
+            "Irish-English character is welcome when available from a licensed voice. "
+            "Do not claim to be, imitate, or reproduce any real actor's voice. "
+            "Respond in the user's language (English, Hindi or Marathi when detected), "
+            "unless they explicitly request a different language. "
             "You can coordinate tools, reason across models, summarize findings, write code, "
             "and ask short clarifying questions only when truly blocked."
         ),
     )
     groq_llm_model: str = os.getenv("GROQ_LLM_MODEL", "llama-3.3-70b-versatile")
     groq_stt_model: str = os.getenv("GROQ_STT_MODEL", "whisper-large-v3-turbo")
+    tts_model: str = os.getenv("ELEVENLABS_TTS_MODEL", "eleven_multilingual_v2")
+    multilingual_stt: bool = os.getenv("FRIDAY_MULTILINGUAL_STT", "true").lower() in (
+        "1", "true", "yes", "on"
+    )
     elevenlabs_voice: str = os.getenv(
         "ELEVENLABS_VOICE_LINK",
         os.getenv("ELEVENLABS_VOICE_ID", ""),
