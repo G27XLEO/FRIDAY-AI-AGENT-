@@ -54,7 +54,7 @@ _INTENT_PATTERNS: tuple[tuple[str, tuple[str, ...]], ...] = (
 )
 
 _URGENT_WORDS = (
-    "urgent", "asap", "immediately", "critical", "emergency",
+    "urgent", "urgently", "asap", "immediately", "critical", "emergency",
     "तुरंत", "जल्दी", "आपातकाल", "अत्यावश्यक",
     "तातडीने", "लवकर", "आपत्कालीन",
 )
