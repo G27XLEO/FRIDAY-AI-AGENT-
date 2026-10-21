@@ -13,17 +13,17 @@ type WakeOrbProps = {
   onClose: () => void
 }
 
-const modes: { mode: WakeMode; title: string; icon: typeof Mic; orb: 'breathing' | 'listening' | 'solving' | 'working' }[] = [
-  { mode: 'standby', title: 'Standby', icon: Radio, orb: 'breathing' },
-  { mode: 'listening', title: 'Listening', icon: Mic, orb: 'listening' },
-  { mode: 'thinking', title: 'Thinking', icon: BrainCircuit, orb: 'solving' },
-  { mode: 'speaking', title: 'Speaking', icon: Volume2, orb: 'working' },
+const modes: { id: WakeMode; title: string; icon: typeof Mic; orb: 'breathing' | 'listening' | 'solving' | 'working' }[] = [
+  { id: 'standby', title: 'Standby', icon: Radio, orb: 'breathing' },
+  { id: 'listening', title: 'Listening', icon: Mic, orb: 'listening' },
+  { id: 'thinking', title: 'Thinking', icon: BrainCircuit, orb: 'solving' },
+  { id: 'speaking', title: 'Speaking', icon: Volume2, orb: 'working' },
 ]
 
 /** A manual, offline JARVIS-inspired visual simulation, never a live microphone. */
 export function WakeOrb({ mode, onModeChange, onClose }: WakeOrbProps) {
   const closeRef = useRef<HTMLButtonElement>(null)
-  const active = modes.find(item => item.mode === mode) ?? modes[0]
+  const active = modes.find(item => item.id === mode) ?? modes[0]
 
   useEffect(() => {
     const priorOverflow = document.body.style.overflow
@@ -107,7 +107,7 @@ export function WakeOrb({ mode, onModeChange, onClose }: WakeOrbProps) {
             : mode === 'listening' ? 'LISTENING PREVIEW'
             : mode === 'thinking' ? 'PROCESSING PREVIEW' : 'SPEAKING PREVIEW'}</h1>
           <p id="friday-wake-description">
-            Manual visual state · No microphone, live agent or cloud model connected
+            Manual visual state · Microphone off · No live agent or cloud model connected
           </p>
 
           <div className="wake-mini-orb"><ThinkingOrb state={active.orb} size={64} />
@@ -116,9 +116,9 @@ export function WakeOrb({ mode, onModeChange, onClose }: WakeOrbProps) {
           <div className="wake-stage-list" role="group" aria-label="Choose visual simulator state">
             {modes.map(item => {
               const Icon = item.icon
-              return <button key={item.mode}
-                className={'wake-stage-button ' + (mode === item.mode ? 'selected' : '')}
-                aria-pressed={mode === item.mode} onClick={() => onModeChange(item.mode)}>
+              return <button key={item.id}
+                className={'wake-stage-button ' + (mode === item.id ? 'selected' : '')}
+                aria-pressed={mode === item.id} onClick={() => onModeChange(item.id)}>
                 <Icon size={15} /> {item.title}
               </button>
             })}
