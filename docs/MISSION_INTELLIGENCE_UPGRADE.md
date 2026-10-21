@@ -12,17 +12,17 @@ and LiveKit remains the realtime voice transport. The mission controller adds
 state and evidence discipline, not a new foundation model or autonomous
 guarantee of correctness.
 
-The dashboard is read-only. It polls \`/api/metrics\`, reads \`/api/events\`,
-and listens to \`/ws/metrics\`. These endpoints report the **FastAPI server
+The dashboard is read-only. It polls `/api/metrics`, reads `/api/events`,
+and listens to `/ws/metrics`. These endpoints report the **FastAPI server
 process**, not the microphone/LiveKit worker on a separate process. A green
 dashboard connection therefore does not prove the voice worker is online.
 
 ## Design
 
-- \`thinking-orbs\`: orb uses real API-reported \`state\` (idle/breathing,
+- `thinking-orbs`: orb uses real API-reported `state` (idle/breathing,
   processing/solving, active/working, no API/connecting).
-- \`metal-fx\`: metallic information control.
-- \`border-beam\`: active telemetry panel boundary.
+- `metal-fx`: metallic information control.
+- `border-beam`: active telemetry panel boundary.
 - Responsive glass panels, real runtime counters and recent event stream.
 - Reduced-motion CSS and accessible text labels. UI decorative effects do not
   replace important status text.
@@ -31,24 +31,24 @@ Free package API reference: https://libraries.dev/
 
 ## Intelligence layer
 
-\`friday_agent/mission_control.py\` implements:
+`friday_agent/mission_control.py` implements:
 
 1. Create up to five missions, each with up to eight ordered steps.
 2. Require a goal and measurable success criteria.
 3. Keep exactly one active step for progress updates.
-4. Record \`reported\` progress separately from \`verified\` status.
+4. Record `reported` progress separately from `verified` status.
 5. Verify text evidence by reading a public workspace file.
 6. Mark the whole mission verified only when **every** step was checked.
 7. Block on a reported failure and allow a retry.
 
-\`friday_agent/livekit_agent.py\` exposes these controls as LiveKit function
-tools: \`create_mission\`, \`mission_status\`, \`report_mission_step\`,
-\`verify_document_step\`, \`read_project_document\`, \`runtime_status\`.
+`friday_agent/livekit_agent.py` exposes these controls as LiveKit function
+tools: `create_mission`, `mission_status`, `report_mission_step`,
+`verify_document_step`, `read_project_document`, `runtime_status`.
 Each voice-agent instance gets separate ephemeral mission state.
 
-Important: a model can fabricate its own \`report_mission_step\` evidence,
+Important: a model can fabricate its own `report_mission_step` evidence,
 so the reported state is **not considered proof**. Only deterministic
-\`verify_document_step\` checks can change status to \`verified\`; those checks
+`verify_document_step` checks can change status to `verified`; those checks
 verify a file contains specified text, not that arbitrary code is correct.
 Other kinds of task verification require future, scoped verifiers and tests.
 
@@ -62,32 +62,32 @@ expose its streamable HTTP endpoint publicly.
 
 From the repository root:
 
-\`\`\`bash
+```bash
 cd web
 npm install --no-audit --no-fund
 npm run type-check
 npm run build
 npm run dev
-\`\`\`
+```
 
-Visit http://localhost:3000. During development Vite proxies \`/api\` and
-\`/ws\` to the FastAPI backend on port 8001.
+Visit http://localhost:3000. During development Vite proxies `/api` and
+`/ws` to the FastAPI backend on port 8001.
 
 To launch the Python API after provisioning Python requirements:
 
-\`\`\`bash
+```bash
 python -m friday_agent.web_server
-\`\`\`
+```
 
 To build a production container (includes the compiled dashboard):
 
-\`\`\`bash
+```bash
 docker build -t friday-os .
 docker run --rm -p 8001:8001 --env-file .env friday-os \
   python -m friday_agent.web_server
-\`\`\`
+```
 
-Keep \`FRIDAY_CORS_ORIGINS\` empty for same-origin operation. For a trusted
+Keep `FRIDAY_CORS_ORIGINS` empty for same-origin operation. For a trusted
 separate frontend, set it to an exact comma-separated list of origins.
 Use a TLS-terminating, authenticated reverse proxy before exposing the
 dashboard outside your trusted development network.
