@@ -18,6 +18,7 @@ import android.speech.RecognitionListener;
 import android.speech.RecognizerIntent;
 import android.speech.SpeechRecognizer;
 import android.speech.tts.TextToSpeech;
+import android.speech.tts.UtteranceProgressListener;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
@@ -174,7 +175,21 @@ public class MainActivity extends Activity {
                     speakingReady = false;
                 }
             }
-            updateServiceLabel();
+            runOnUiThread(this::updateServiceLabel);
+        });
+        textToSpeech.setOnUtteranceProgressListener(new UtteranceProgressListener() {
+            @Override public void onStart(String utteranceId) {
+                runOnUiThread(() -> {
+                    if (orb != null) orb.setState(FridayOrbView.State.SPEAKING);
+                    if (stateLabel != null) stateLabel.setText("SPEAKING");
+                });
+            }
+            @Override public void onDone(String utteranceId) {
+                runOnUiThread(() -> showStandby());
+            }
+            @Override public void onError(String utteranceId) {
+                runOnUiThread(() -> showStandby());
+            }
         });
         updateServiceLabel();
     }
@@ -273,12 +288,12 @@ public class MainActivity extends Activity {
         Intent external = null;
         switch (action) {
             case WAKE:
-                displayReply("I'm ready. Say your command after tapping Listen.", audible);
                 showStandby();
+                displayReply("I'm ready. Say your command after tapping Listen.", audible);
                 return;
             case STATUS:
-                displayReply(systemReport(), audible);
                 showStandby();
+                displayReply(systemReport(), audible);
                 return;
             case HELP:
                 answer = "I can check system status, time, date, battery and open "
@@ -331,8 +346,8 @@ public class MainActivity extends Activity {
                 answer = "No authorized application was available for that action.";
             }
         }
-        displayReply(answer, audible);
         showStandby();
+        displayReply(answer, audible);
     }
 
     private int getBatteryPercent() {
@@ -373,7 +388,11 @@ public class MainActivity extends Activity {
         replyLabel.setText(text);
         if (audible && speakingReady && textToSpeech != null) {
             orb.setState(FridayOrbView.State.SPEAKING);
-            textToSpeech.speak(text, TextToSpeech.QUEUE_FLUSH, null, "friday-response");
+            stateLabel.setText("SPEAKING");
+            if (textToSpeech.speak(text, TextToSpeech.QUEUE_FLUSH, null, "friday-response")
+                    == TextToSpeech.ERROR) {
+                showStandby();
+            }
         }
     }
 
