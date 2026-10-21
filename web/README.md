@@ -32,9 +32,9 @@ The generated `web/dist` directory can be deployed on a static web host.
 
 - Manual preview buttons change the Thinking Orbs animation between
   standby, active and thinking. These are **visual demos**, not voice states.
-- **Siri-inspired FRIDAY Wake Orb:** press "Wake orb" in the header or
+- **JARVIS-inspired FRIDAY ARC HUD:** press "Wake orb" in the header or
   "Simulate Hey FRIDAY" on the overview to open an immersive, animated
-  multicolor voice-orb overlay. Touch the Standby, Listening, Thinking and
+  cyan holographic reactor command HUD. Touch the Standby, Listening, Thinking and
   Speaking controls to preview the visual states. Press Escape or Close
   to dismiss. **Alt+F** opens the preview from the keyboard.
 - Wake is **button/shortcut simulated only**: it does not detect "Hey FRIDAY",
@@ -62,3 +62,14 @@ are not independent verification of real-world work.
 
 Run `npm run test:standalone` to check the source for common accidental
 backend/audio connections.
+
+## ARC interface v3
+
+The new React preview combines Libraries.dev **Thinking Orbs** for visual
+states, **Border Beam** for an active telemetry panel, and **Metal FX** for
+metallic interface accents. It also updates the overview reactor design.
+
+Everything remains a **standalone local-only UI preview**. It has no
+microphone, no model calls, no telemetry connection, and does not control
+the separate Android companion. Hindi and Marathi NLP reside in the
+Android command router and the separately deployed LiveKit worker.
