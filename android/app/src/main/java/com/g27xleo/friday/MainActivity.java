@@ -22,6 +22,9 @@ import android.speech.tts.UtteranceProgressListener;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ArrayAdapter;
+import android.widget.AdapterView;
+import android.widget.Spinner;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
@@ -52,6 +55,7 @@ public class MainActivity extends Activity {
     private boolean speakingReady;
     private boolean listening;
     private boolean autoListenPending;
+    private Locale speechLocale = Locale.getDefault();
 
     @Override
     protected void onCreate(Bundle state) {
@@ -143,6 +147,41 @@ public class MainActivity extends Activity {
         context.setLetterSpacing(0.1f);
         outer.addView(context);
         spacer(outer, 21);
+
+        // Speech providers may not have Hindi/Marathi voices installed.
+        TextView languageLabel = label("SPEECH LANGUAGE  /  DEVICE PROVIDER", 10, muted, true);
+        languageLabel.setGravity(Gravity.START);
+        languageLabel.setTypeface(Typeface.MONOSPACE);
+        outer.addView(languageLabel, fullButtonParams());
+        spacer(outer, 7);
+        Spinner languages = new Spinner(this);
+        ArrayAdapter<String> languageAdapter = new ArrayAdapter<>(this,
+                android.R.layout.simple_spinner_item, new String[] {
+                "Device language (default)", "English (India)", "हिन्दी · Hindi",
+                "मराठी · Marathi" });
+        languageAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        languages.setAdapter(languageAdapter);
+        languages.setBackground(panelShape(0xFF102C3A, 0xFF347D91, 9));
+        languages.setPadding(dp(12), dp(6), dp(8), dp(6));
+        languages.setContentDescription("Select speech recognition and voice language");
+        outer.addView(languages, new LinearLayout.LayoutParams(-1, dp(49)));
+        languages.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override public void onItemSelected(AdapterView<?> parent, View selected,
+                    int position, long id) {
+                speechLocale = position == 1 ? new Locale("en", "IN")
+                        : position == 2 ? new Locale("hi", "IN")
+                        : position == 3 ? new Locale("mr", "IN")
+                        : Locale.getDefault();
+                if (textToSpeech != null && speakingReady) {
+                    int result = textToSpeech.setLanguage(speechLocale);
+                    speakingReady = result != TextToSpeech.LANG_MISSING_DATA
+                            && result != TextToSpeech.LANG_NOT_SUPPORTED;
+                }
+                updateServiceLabel();
+            }
+            @Override public void onNothingSelected(AdapterView<?> parent) { }
+        });
+        spacer(outer, 14);
 
         Button listen = button("◉   INITIALIZE VOICE LINK", 0xFF09485A);
         listen.setContentDescription("Tap to start Android speech recognition");
@@ -280,7 +319,7 @@ public class MainActivity extends Activity {
         textToSpeech = new TextToSpeech(this, status -> {
             speakingReady = status == TextToSpeech.SUCCESS;
             if (speakingReady && textToSpeech != null) {
-                int language = textToSpeech.setLanguage(Locale.getDefault());
+                int language = textToSpeech.setLanguage(speechLocale);
                 if (language == TextToSpeech.LANG_NOT_SUPPORTED
                         || language == TextToSpeech.LANG_MISSING_DATA) {
                     speakingReady = false;
@@ -309,7 +348,8 @@ public class MainActivity extends Activity {
         if (serviceLabel == null) return;
         serviceLabel.setText("Speech recognition: "
                 + (SpeechRecognizer.isRecognitionAvailable(this) ? "available" : "unavailable")
-                + "   ·   Speech output: " + (speakingReady ? "ready" : "not ready"));
+                + "   ·   Speech output: " + (speakingReady ? "ready" : "not ready")
+                + "   ·   Language: " + speechLocale.toLanguageTag());
     }
 
     private void startVoice() {
@@ -367,7 +407,7 @@ public class MainActivity extends Activity {
             Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
             intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
                     RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
-            intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault().toLanguageTag());
+            intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, speechLocale.toLanguageTag());
             intent.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3);
             listening = true;
             orb.setState(FridayOrbView.State.LISTENING);
@@ -412,42 +452,56 @@ public class MainActivity extends Activity {
                         + "Other actions require explicit new integrations.";
                 break;
             case TIME:
-                answer = "The time is " + DateFormat.getTimeInstance(
-                        DateFormat.SHORT, Locale.getDefault()).format(new Date()) + ".";
+                String localTime = DateFormat.getTimeInstance(
+                        DateFormat.SHORT, speechLocale).format(new Date());
+                answer = languageText("The time is ", "अभी समय है ", "आता वेळ आहे ")
+                        + localTime + ".";
                 break;
             case DATE:
-                answer = "Today is " + DateFormat.getDateInstance(
-                        DateFormat.FULL, Locale.getDefault()).format(new Date()) + ".";
+                String localDate = DateFormat.getDateInstance(
+                        DateFormat.FULL, speechLocale).format(new Date());
+                answer = languageText("Today is ", "आज तारीख है ", "आज तारीख आहे ")
+                        + localDate + ".";
                 break;
             case BATTERY:
                 int level = getBatteryPercent();
-                answer = level >= 0 ? "Battery level is " + level + " percent."
-                        : "Battery percentage is unavailable.";
+                answer = level >= 0
+                        ? languageText("Battery level is ", "बैटरी ", "बॅटरी ")
+                            + level + languageText(" percent.", " प्रतिशत है।", " टक्के आहे.")
+                        : languageText("Battery percentage is unavailable.",
+                            "बैटरी स्तर उपलब्ध नहीं है।", "बॅटरी पातळी उपलब्ध नाही.");
                 break;
             case OPEN_WIFI:
-                answer = "Opening WiFi settings.";
+                answer = languageText("Opening WiFi settings.",
+                        "वाईफाई सेटिंग खोल रही हूँ।", "वायफाय सेटिंग्ज उघडत आहे.");
                 external = new Intent(Settings.ACTION_WIFI_SETTINGS);
                 break;
             case OPEN_BLUETOOTH:
-                answer = "Opening Bluetooth settings.";
+                answer = languageText("Opening Bluetooth settings.",
+                        "ब्लूटूथ सेटिंग खोल रही हूँ।", "ब्लूटूथ सेटिंग्ज उघडत आहे.");
                 external = new Intent(Settings.ACTION_BLUETOOTH_SETTINGS);
                 break;
             case OPEN_DISPLAY:
-                answer = "Opening display settings.";
+                answer = languageText("Opening display settings.",
+                        "डिस्प्ले सेटिंग खोल रही हूँ।", "डिस्प्ले सेटिंग्ज उघडत आहे.");
                 external = new Intent(Settings.ACTION_DISPLAY_SETTINGS);
                 break;
             case OPEN_SETTINGS:
-                answer = "Opening system settings.";
+                answer = languageText("Opening system settings.",
+                        "सिस्टम सेटिंग खोल रही हूँ।", "सिस्टम सेटिंग्ज उघडत आहे.");
                 external = new Intent(Settings.ACTION_SETTINGS);
                 break;
             case OPEN_BROWSER:
-                answer = "Opening the browser.";
+                answer = languageText("Opening the browser.",
+                        "ब्राउज़र खोल रही हूँ।", "ब्राउझर उघडत आहे.");
                 external = new Intent(Intent.ACTION_VIEW,
                         android.net.Uri.parse("https://www.google.com"));
                 break;
             default:
-                answer = "That command is not supported. I won't execute unrecognized "
-                        + "instructions. Say help to hear available commands.";
+                answer = languageText(
+                        "Unsupported command. Say help for available local commands.",
+                        "यह आदेश समर्थित नहीं है। उपलब्ध आदेश जानने के लिए मदद कहें।",
+                        "ही आज्ञा समर्थित नाही. उपलब्ध आज्ञांसाठी मदत म्हणा.");
         }
 
         if (external != null) {
@@ -459,6 +513,13 @@ public class MainActivity extends Activity {
         }
         showStandby();
         displayReply(answer, audible);
+    }
+
+    private String languageText(String english, String hindi, String marathi) {
+        String code = speechLocale.getLanguage();
+        if ("hi".equals(code)) return hindi;
+        if ("mr".equals(code)) return marathi;
+        return english;
     }
 
     private int getBatteryPercent() {
@@ -486,6 +547,7 @@ public class MainActivity extends Activity {
         return "FRIDAY system check:\n"
                 + "Local command router: READY\n"
                 + "Android speech recognition: " + (speechAvailable ? "AVAILABLE" : "UNAVAILABLE") + "\n"
+                + "Speech language: " + speechLocale.toLanguageTag() + "\n"
                 + "Microphone permission: " + (micGranted ? "GRANTED" : "NOT GRANTED") + "\n"
                 + "Text to speech: " + (speakingReady ? "READY" : "UNAVAILABLE") + "\n"
                 + "Default assistant role: " + assistantRole + "\n"
