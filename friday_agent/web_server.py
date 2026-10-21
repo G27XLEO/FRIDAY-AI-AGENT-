@@ -5,6 +5,8 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import os
+from urllib.parse import urlsplit
 from contextlib import asynccontextmanager
 from typing import Any
 
@@ -35,7 +37,8 @@ class ConnectionManager:
 
     def disconnect(self, websocket: WebSocket) -> None:
         """Unregister closed WebSocket connection."""
-        self.active_connections.remove(websocket)
+        if websocket in self.active_connections:
+            self.active_connections.remove(websocket)
         logger.info("WebSocket client disconnected. Total connections: %d", len(self.active_connections))
 
     async def broadcast(self, message: dict[str, Any]) -> None:
@@ -80,13 +83,17 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# CORS configuration for frontend development
+# Same-origin by default; add specific origins only for trusted clients.
+CORS_ORIGINS = [
+    item.strip() for item in os.getenv("FRIDAY_CORS_ORIGINS", "").split(",")
+    if item.strip()
+]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=CORS_ORIGINS,
+    allow_credentials=False,
+    allow_methods=["GET"],
+    allow_headers=[],
 )
 
 
@@ -115,6 +122,12 @@ async def get_recent_events(limit: int = 50) -> list[dict[str, Any]]:
 @app.websocket("/ws/metrics")
 async def websocket_metrics(websocket: WebSocket) -> None:
     """WebSocket endpoint for real-time metrics streaming."""
+    origin = websocket.headers.get("origin")
+    if origin:
+        request_origin = urlsplit(origin)
+        if request_origin.netloc != websocket.headers.get("host") and origin not in CORS_ORIGINS:
+            await websocket.close(code=1008, reason="Untrusted WebSocket origin")
+            return
     await manager.connect(websocket)
     try:
         while True:
