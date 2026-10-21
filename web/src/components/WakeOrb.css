@@ -94,3 +94,43 @@
  .wake-stage-list{margin:8px 0}}
 @media(prefers-reduced-motion:reduce){.wake-screen *, .wake-screen *:before, .wake-screen *:after{
  animation:none!important;transition:none!important}}
+
+
+/* FRIDAY gallery overlay — visually consistent with Libraries.dev inspiration. */
+.wake-screen{background:radial-gradient(circle at 50% 41%,#152024 0,#0b0b0b 45%,#050505 82%);
+ color:#f4f4f4}
+.wake-screen:before{opacity:.13;background-size:70px 70px}
+.wake-header{background:#090909;border-bottom:1px solid #303030;padding:18px clamp(17px,3vw,45px)}
+.wake-logo{font-size:17px;letter-spacing:-.02em;color:white}
+.wake-logo-mark{color:#f1f1f1;text-shadow:none;font-size:23px}
+.wake-logo small{font-size:11px;color:#999;letter-spacing:.08em}
+.wake-system-pill{color:#b9b9b9}.wake-status-dot{background:#c4f8ff}
+.wake-dismiss{background:#222;border:1px solid #454545;border-radius:999px;color:#eee}
+.wake-dismiss:hover{background:#333;border-color:#bbb}
+.wake-hud-main{grid-template-columns:minmax(220px,1fr) minmax(310px,640px) minmax(220px,1fr)}
+.wake-panel-number{color:#999;border-bottom-color:#303030}
+.wake-hud-side{color:#a3a3a3}
+.wake-data-line strong{color:#eee}
+.wake-hud-side p{color:#939393}
+.wake-side-status{background:#171717;border:1px solid #383838;border-radius:18px}
+.wake-side-status span{color:#8f8f8f}.wake-side-status strong{color:#f2f2f2}
+.wake-core-column{padding:19px 0}
+.wake-kicker{display:inline-block;background:#191919;border:1px solid #393939;border-radius:999px;
+ padding:11px 18px;color:#c3c3c3;letter-spacing:.09em}
+.wake-reactor{margin:15px 0;filter:drop-shadow(0 0 26px #7bdee92b)}
+.wake-mode-overline{color:#999}
+.wake-core-column h1{font-size:clamp(22px,3.4vw,41px);letter-spacing:-.05em;color:#f4f4f4;
+ font-family:'Space Grotesk',Inter,ui-sans-serif,sans-serif}
+.wake-core-column>p{color:#a1a1a1;max-width:460px}
+.wake-mini-orb{color:#b3b3b3}
+.wake-stage-button{border-radius:999px;padding:13px 17px;background:#1d1d1d;border-color:#3b3b3b;
+ color:#c5c5c5}
+.wake-stage-button:hover{border-color:#fafafa}
+.wake-stage-button.selected{background:#f6f6f6;color:#111;border-color:#fff;box-shadow:none}
+.wake-footer{background:#080808;border-top:1px solid #333;color:#858585}
+.wake-metal-chip{background:#1e1e1e;color:#f0f0f0}
+@media(max-width:1040px){.wake-hud-main{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:600px){.wake-header{padding:12px 17px}.wake-logo small{display:none}
+ .wake-core-column{padding:10px 0}.wake-reactor{width:min(79vw,305px)}
+ .wake-stage-button{padding:12px 13px}.wake-core-column h1{font-size:24px}
+ .wake-kicker{font-size:9px;padding:10px 12px}}
