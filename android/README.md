@@ -4,7 +4,7 @@ This is an **installable Android app prototype** for Android 8.0+ (API 26+).
 It is separate from the standalone React dashboard in `web/`.
 
 This app is **not a superintelligence or an autonomous general AI**.
-It provides native assistant registration, a fluid wake orb, foreground speech
+It provides native assistant registration, a minimal monochrome FRIDAY home inspired by Libraries.dev and an animated ARC voice card, foreground speech
 recognition via the Android speech provider, text-to-speech feedback, a
 permission-gated microphone and a restricted command router.
 
@@ -17,7 +17,9 @@ permission-gated microphone and a restricted command router.
 5. Download the ZIP to your Android phone and extract `app-debug.apk`.
 6. Open the APK from Files and approve Android's **Install unknown apps**
    prompt only for this trusted installation.
-7. Open **FRIDAY OS**. Tap **CHECK ALL AVAILABLE SYSTEMS** first.
+7. Open **FRIDAY OS**, choose a language and tap **Start listening**.
+8. To launch apps without speech, tap **Browse installed apps** and select
+   the application from Android's launchable activity list.
 
 Do not install an APK from untrusted links. GitHub's automated
 artifact download may require signing in. The artifact is retained for
@@ -38,21 +40,21 @@ The APK will be at
 ### App and permission check
 
 1. Launch the app and confirm the fluid orb appears without crashing.
-2. Tap **CHECK ALL AVAILABLE SYSTEMS**.
+2. Choose Device default, English (India), Hindi, or Marathi in the language selector.
+3. Tap **System scan** on the card grid or expand diagnostics for a full report.
 3. Check the reported fields individually:
    - Local command router should show READY.
    - Speech recognition depends on whether Android exposes a recognizer.
    - Microphone permission is initially NOT GRANTED, until the user allows it.
    - Text to speech requires an installed voice provider and language.
    - Default assistant selection depends on Android/OEM support.
-4. Tap **TAP TO LISTEN** and grant microphone permission if you choose.
-5. Speak **"Hey FRIDAY, check systems"**, **"what time is it"**, or
-   **"open WiFi settings"**. Confirm the screen shows the transcript
+4. Tap **Start listening** and grant microphone permission if you choose.
+5. Try English "what time is it", Hindi "समय बताओ", or Marathi "वेळ सांगा". Confirm the screen shows the transcript
    and speaks an appropriate answer if TTS is available.
 6. Try typing **"open Bluetooth settings"**. It should open Android Settings.
 7. Type **"delete all my photos"**. It should refuse to execute it.
 8. Return to FRIDAY and verify that the app stops recording when backgrounded.
-9. To test assistant integration, tap **SET AS DEFAULT ASSISTANT**, then
+9. To test assistant integration, expand diagnostics and tap **SET DEFAULT ASSISTANT**, then
    approve the Android system prompt if it offers FRIDAY. On some phones the
    setting is under Apps > Default apps > Digital assistant app. Try the
    phone's normal assistant gesture.
@@ -65,10 +67,10 @@ services, and speech providers. The exact Settings path varies by vendor.
 | Capability | Included | What the check actually proves |
 |---|---|---|
 | Native Android installable UI | Yes | CI compiles APK, phone install needs manual check |
-| Animated orb | Yes | Native Canvas visualizer, not audio-level input |
-| Voice commands while app foreground | Conditional | Depends on permission and Android recognizer |
-| Speech output | Conditional | Requires installed TTS voice/provider |
-| Local device actions | Yes | Explicit commands only (settings/browser) |
+| Animated ARC reactor HUD | Yes | Native Canvas visualizer, not audio-level input |
+| Voice commands while app foreground | Conditional | English/Hindi/Marathi allowlisted phrases; depends on Android recognizer |
+| Speech output | Conditional | Short localized responses; matching TTS voice/provider required |
+| Local device actions | Yes | Explicit commands only (settings/browser/visible installed app launch) |
 | Battery/time/date/system status | Yes | Uses local Android APIs |
 | Android default-assistant role | Experimental | User choice and OEM-specific support |
 | Always-on "Hey FRIDAY" wake with screen off | **No** | Not implemented; may require privileged hotword/DSP access |
@@ -103,3 +105,68 @@ device tests.
 
 The React `web/` dashboard remains standalone and does not connect to the
 Android voice companion.
+
+## Multilingual voice and ARC design (v0.2)
+
+The native app supports one **selected speech language** at a time:
+device default, English (India), Hindi or Marathi. The Android speech
+recognizer and TTS provider must support the selected language; on Android 8+
+this selector is not automatic mixed-language switching. Commands remain
+restricted to explicit allowlisted phrases.
+
+The **separate** LiveKit worker uses Groq multilingual transcription with
+language detection enabled by FRIDAY_MULTILINGUAL_STT=true, conservative
+Unicode-aware intent/language hints and ElevenLabs multilingual TTS
+(ELEVENLABS_TTS_MODEL=eleven_multilingual_v2). It is **not connected**
+to the Android app.
+
+Use a voice that is licensed for your project. The LiveKit worker can be
+configured with a warm, articulate, subtle Irish-inflected female voice,
+but does not include or claim the real voice of actor Kerry Condon.
+The Android app relies on installed system TTS providers instead.
+
+Libraries.dev effects (thinking-orbs, border-beam, metal-fx) power the
+standalone React HUD. The native Android ARC reactor is drawn with Canvas
+because those npm React packages are not compatible with a Java View.
+
+## App launch commands and the Libraries.dev-inspired layout (v0.3)
+
+The new Android home uses a high-contrast black background, generous
+typography, rounded pill buttons and an effect showcase card, adapting the
+general design language of [Libraries.dev](https://libraries.dev/) to native
+Android views. It does not reproduce their branding, assets, site source code
+or React effect engines in a Java app.
+
+**App launch commands:**
+- English: "open WhatsApp", "launch YouTube", "start Instagram"
+- Hindi: "व्हाट्सएप खोलो", "यूट्यूब खोलो"
+- Marathi: "व्हॉट्सअॅप उघडा", "इंस्टाग्राम उघडा"
+- Tap **Browse installed apps** for a launchable-app picker when speech
+  recognition or exact spoken app-name matching is unavailable.
+
+FRIDAY asks Android for launchable apps through the narrowly scoped
+ACTION_MAIN / CATEGORY_LAUNCHER package visibility query. It does **not**
+request QUERY_ALL_PACKAGES, accessibility services, or background microphone.
+Only an exact label / explicitly mapped alias for an installed, exported,
+launchable app can be opened. Similar or unknown names are not guessed.
+Compound requests (e.g. "open WhatsApp and send messages") are deliberately
+rejected. The launcher may display multiple matching components, in which case
+the user selects one. This opens apps only; it cannot manipulate their
+private contents or perform actions within them.
+
+The web dashboard receives the corresponding black-and-white gallery
+layout and uses actual Libraries.dev React components. It is still a
+standalone interactive **preview**, not connected to the Android app or
+the LiveKit voice worker.
+
+### Debugging app commands
+1. If **Browse installed apps** works but speech does not, check that
+   RECORD_AUDIO is granted, select the correct language, and check the
+   **Your conversation** transcript for recognizer mistakes.
+2. If speech recognizes the command but no app opens, check that the
+   requested app has a launchable home-screen activity and that its
+   spoken name matches the installed label.
+3. If the requested app isn't shown in Browse, the installed app may
+   be hidden, disabled, or restricted by Android/OEM visibility.
+4. A successful APK build is not a physical Android device test. OEM
+   and speech-provider behavior must still be confirmed on a phone.

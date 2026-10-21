@@ -55,4 +55,36 @@ public final class CommandRouterTest {
         assertEquals(CommandRouter.Action.UNKNOWN,
                 CommandRouter.parse("hey friday delete everything"));
     }
+    @Test
+    public void understandsHindiCommands() {
+        assertEquals(CommandRouter.Action.TIME, CommandRouter.parse("समय बताओ"));
+        assertEquals(CommandRouter.Action.STATUS, CommandRouter.parse("हे फ्रायडे, सिस्टम चेक करो"));
+        assertEquals(CommandRouter.Action.OPEN_WIFI, CommandRouter.parse("वाईफाई सेटिंग खोलो"));
+        assertEquals(CommandRouter.Action.BATTERY, CommandRouter.parse("बैटरी कितनी है?"));
+        assertEquals(CommandRouter.Action.DATE, CommandRouter.parse("आज की तारीख बताओ।"));
+    }
+
+    @Test
+    public void understandsMarathiCommands() {
+        assertEquals(CommandRouter.Action.TIME, CommandRouter.parse("वेळ सांगा"));
+        assertEquals(CommandRouter.Action.DATE, CommandRouter.parse("आजची तारीख सांगा"));
+        assertEquals(CommandRouter.Action.OPEN_BLUETOOTH, CommandRouter.parse("ब्लूटूथ सेटिंग्ज उघडा"));
+        assertEquals(CommandRouter.Action.STATUS, CommandRouter.parse("फ्रायडे, सिस्टम तपासा"));
+        assertEquals(CommandRouter.Action.BATTERY, CommandRouter.parse("बॅटरी किती आहे"));
+    }
+
+    @Test
+    public void multilingualRouterRejectsCompoundAndUnsafeRequests() {
+        assertEquals(CommandRouter.Action.UNKNOWN,
+                CommandRouter.parse("वाईफाई खोलो और सारी तस्वीरें मिटाओ"));
+        assertEquals(CommandRouter.Action.UNKNOWN,
+                CommandRouter.parse("सेटिंग्ज उघडा आणि माझे फोटो हटवा"));
+        assertEquals(CommandRouter.Action.UNKNOWN,
+                CommandRouter.parse("वेळ सांगा आणि पैसे पाठवा"));
+        assertEquals(CommandRouter.Action.UNKNOWN,
+                CommandRouter.parse("open wifi and erase data"));
+        assertEquals(CommandRouter.Action.UNKNOWN,
+                CommandRouter.parse("मला मदत हवी आहे"));
+    }
+
 }
