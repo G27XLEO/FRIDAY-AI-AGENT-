@@ -73,7 +73,7 @@ export default function App() {
         try {
           const packet = JSON.parse(message.data) as { type: string; data?: Metrics }
           if (packet.type === 'metrics_update' && packet.data) {
-            setMetrics(previous => ({ ...previous, ...packet.data } as Metrics))
+            setMetrics(previous => ({ ...(previous ?? {}), ...packet.data } as Metrics))
           }
         } catch { /* Ignore malformed telemetry. */ }
       }
