@@ -32,11 +32,18 @@ The generated `web/dist` directory can be deployed on a static web host.
 
 - Manual preview buttons change the Thinking Orbs animation between
   standby, active and thinking. These are **visual demos**, not voice states.
+- **Siri-inspired FRIDAY Wake Orb:** press "Wake orb" in the header or
+  "Simulate Hey FRIDAY" on the overview to open an immersive, animated
+  multicolor voice-orb overlay. Touch the Standby, Listening, Thinking and
+  Speaking controls to preview the visual states. Press Escape or Close
+  to dismiss. **Alt+F** opens the preview from the keyboard.
+- Wake is **button/shortcut simulated only**: it does not detect "Hey FRIDAY",
+  record sound or run Android system-wide background services.
 - Create missions by entering a goal, success criteria and up to 8 tasks.
 - Manually check tasks, view local completion counts and activity history.
 - Delete individual missions or reset all browser data with confirmation.
 - Local storage restores the workspace in the same browser when available.
-- Mobile layouts and reduced-motion CSS are included.
+- Mobile layouts, keyboard-friendly modal controls and reduced-motion CSS are included.
 - Metal FX and Border Beam from https://libraries.dev/ are bundled as
   npm packages during the build.
 
