@@ -90,3 +90,20 @@ button:disabled{cursor:not-allowed;opacity:.5}
   .breadcrumb{font-size:10px}
   .core{min-height:400px}
 }
+
+
+/* Wake-orb entry points, available without an active voice service */
+.wake-top-launch{display:inline-flex;align-items:center;gap:8px;padding:9px 14px;border:1px solid #4776a2;
+  border-radius:11px;background:linear-gradient(130deg,#123656,#30234c);color:#d5f0ff;
+  font-weight:700;font-size:12px;box-shadow:0 0 22px rgba(66,130,238,.12);}
+.wake-top-launch:hover,.wake-main-launch:hover{border-color:#8adef2;background:linear-gradient(130deg,#1a5277,#472f78)}
+.wake-main-launch{display:inline-flex;align-items:center;justify-content:center;gap:11px;
+  border:1px solid #467ca7;padding:12px 17px;border-radius:11px;margin:0 0 10px;
+  background:linear-gradient(120deg,#16445c,#39275c);color:#e6f7ff;font-size:12px;font-weight:700;
+  box-shadow:0 0 25px rgba(91,128,222,.12);}
+.wake-hint{font-size:10px;color:#7495b2;margin:0 0 18px;line-height:1.55}
+@media(max-width:650px){
+  .wake-top-launch{padding:9px 10px;font-size:11px}
+  .wake-top-launch svg{width:14px;height:14px}
+  .wake-hint{max-width:220px}
+}
