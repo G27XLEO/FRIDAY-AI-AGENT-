@@ -11,7 +11,7 @@ from livekit.plugins import elevenlabs, groq, silero, turn_detector
 from friday_agent.config import config
 from friday_agent import mcp_tools
 from friday_agent.mission_control import MissionControl
-from friday_agent.nlp import build_context
+from friday_agent.nlp import analyze
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 logger = logging.getLogger("friday_agent.livekit_agent")
@@ -137,7 +137,12 @@ class FridayAgent(Agent):
             if isinstance(content, str)
         ).strip()
         if text:
-            turn_ctx.add_message(role="system", content=build_context(text[:1200]))
+            signals = analyze(text[:1200])
+            turn_ctx.add_message(
+                role="assistant",
+                content=(f"Non-authoritative intent signal: {signals.intent}; "
+                         f"urgency: {signals.urgency}."),
+            )
         await super().on_user_turn_completed(turn_ctx, new_message)
 
 
