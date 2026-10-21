@@ -2,6 +2,7 @@ package com.g27xleo.friday;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.role.RoleManager;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
@@ -34,6 +35,7 @@ import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Locale;
+import java.util.List;
 
 /**
  * Foreground-only voice interface and local, allow-listed system commands.
@@ -239,6 +241,15 @@ public class MainActivity extends Activity {
         status.setOnClickListener(view -> handleCommand(CommandRouter.Action.STATUS, true));
         wifi.setOnClickListener(view -> handleCommand(CommandRouter.Action.OPEN_WIFI, true));
         time.setOnClickListener(view -> handleCommand(CommandRouter.Action.TIME, true));
+        spacer(outer, 16);
+        Button apps = button("◫   LAUNCH INSTALLED APP  →", 0xFF163448);
+        apps.setContentDescription("Select an installed application to launch");
+        apps.setOnClickListener(view -> showInstalledApps());
+        outer.addView(apps, fullButtonParams());
+        TextView appsHint = label("TRY: OPEN WHATSAPP · OPEN YOUTUBE · व्हाट्सएप खोलो", 10, muted, false);
+        appsHint.setGravity(Gravity.START);
+        appsHint.setPadding(0, dp(8), 0, 0);
+        outer.addView(appsHint, fullButtonParams());
         spacer(outer, 22);
 
         TextView consoleTitle = label("03  /  COMMAND TERMINAL", 10, cyan, true);
@@ -250,7 +261,7 @@ public class MainActivity extends Activity {
         manualInput.setSingleLine(true);
         manualInput.setTextColor(Color.WHITE);
         manualInput.setHintTextColor(0xFF7F9AAC);
-        manualInput.setHint("Enter an allowed command...");
+        manualInput.setHint("Open WhatsApp, YouTube, or another app...");
         manualInput.setTextSize(13);
         manualInput.setPadding(dp(15), dp(13), dp(15), dp(13));
         manualInput.setBackground(panelShape(0xFF061623, 0xFF245568, 9));
@@ -431,6 +442,13 @@ public class MainActivity extends Activity {
         orb.setState(FridayOrbView.State.THINKING);
         stateLabel.setText("INTERPRETING LOCAL COMMAND");
         CommandRouter.Action action = CommandRouter.parse(normalized);
+        if (action == CommandRouter.Action.UNKNOWN) {
+            String requested = AppCommandParser.requestedApp(normalized);
+            if (requested != null) {
+                openAppByVoice(requested);
+                return;
+            }
+        }
         handleCommand(action, true);
     }
 
@@ -448,8 +466,9 @@ public class MainActivity extends Activity {
                 return;
             case HELP:
                 answer = "I can check system status, time, date, battery and open "
-                        + "WiFi, Bluetooth, display, settings or browser. "
-                        + "Other actions require explicit new integrations.";
+                        + "WiFi, Bluetooth, display, settings, browser, or an installed app. "
+                        + "For example, say open WhatsApp or open YouTube. "
+                        + "Unsupported device actions are not executed.";
                 break;
             case TIME:
                 String localTime = DateFormat.getTimeInstance(
@@ -513,6 +532,57 @@ public class MainActivity extends Activity {
         }
         showStandby();
         displayReply(answer, audible);
+    }
+
+    private void openAppByVoice(String appName) {
+        List<AppLauncher.Entry> matches = AppLauncher.exactMatches(
+                appName, AppLauncher.visibleApps(this));
+        if (matches.isEmpty()) {
+            showStandby();
+            displayReply("I cannot find a launchable app named " + appName
+                    + ". Try the installed-app picker or check the name.", true);
+            return;
+        }
+        if (matches.size() > 1) {
+            showAppChoice("Choose the application named " + appName, matches);
+            return;
+        }
+        launchSelectedApp(matches.get(0));
+    }
+
+    private void launchSelectedApp(AppLauncher.Entry app) {
+        try {
+            // The resolved, explicit launcher activity is the only destination.
+            startActivity(AppLauncher.intentFor(app));
+            showStandby();
+            displayReply("Opening " + app.label + ".", false);
+        } catch (ActivityNotFoundException | SecurityException error) {
+            showStandby();
+            displayReply("Android could not open " + app.label
+                    + ". It may be disabled or blocked by your phone.", true);
+        }
+    }
+
+    private void showAppChoice(String title, List<AppLauncher.Entry> entries) {
+        showStandby();
+        String[] names = new String[entries.size()];
+        for (int i = 0; i < entries.size(); i++) {
+            names[i] = entries.get(i).label + " · " + entries.get(i).packageName;
+        }
+        new AlertDialog.Builder(this)
+                .setTitle(title)
+                .setItems(names, (dialog, which) -> launchSelectedApp(entries.get(which)))
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private void showInstalledApps() {
+        List<AppLauncher.Entry> apps = AppLauncher.visibleApps(this);
+        if (apps.isEmpty()) {
+            displayReply("Android did not expose any launchable applications.", false);
+            return;
+        }
+        showAppChoice("Select installed application", apps);
     }
 
     private String languageText(String english, String hindi, String marathi) {
