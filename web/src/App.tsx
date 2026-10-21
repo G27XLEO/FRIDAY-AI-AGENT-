@@ -7,6 +7,7 @@ import {
 import { ThinkingOrb } from 'thinking-orbs'
 import { BorderBeam } from 'border-beam'
 import { MetalFx, MetalText } from 'metal-fx'
+import { WakeOrb, type WakeMode } from './components/WakeOrb'
 import './styles.css'
 
 type View = 'overview' | 'missions' | 'activity'
@@ -23,7 +24,13 @@ type LocalEvent = { id: string; message: string; createdAt: string }
 type Workspace = { missions: Mission[]; events: LocalEvent[] }
 
 const STORAGE_KEY = 'friday-standalone-workspace-v1'
-const DEFAULT_STEPS = 'Define the objective\nPrepare the execution plan\nReview the result'\n\nfunction uniqueId() {\n  return typeof crypto !== 'undefined' && 'randomUUID' in crypto\n    ? crypto.randomUUID()\n    : String(Date.now()) + '-' + Math.random().toString(36).slice(2)\n}
+const DEFAULT_STEPS = 'Define the objective\nPrepare the execution plan\nReview the result'
+
+function uniqueId() {
+  return typeof crypto !== 'undefined' && 'randomUUID' in crypto
+    ? crypto.randomUUID()
+    : String(Date.now()) + '-' + Math.random().toString(36).slice(2)
+}
 
 const previews: { state: VisualState; label: string; description: string }[] = [
   { state: 'breathing', label: 'Standby', description: 'Ambient visual state' },
@@ -81,6 +88,8 @@ function Stat({ title, value, detail, icon: Icon }: {
 export default function App() {
   const [view, setView] = useState<View>('overview')
   const [orbState, setOrbState] = useState<VisualState>('breathing')
+  const [wakeOpen, setWakeOpen] = useState(false)
+  const [wakeMode, setWakeMode] = useState<WakeMode>('standby')
   const [workspace, setWorkspace] = useState<Workspace>(readWorkspace)
   const [goal, setGoal] = useState('')
   const [criteria, setCriteria] = useState('')
@@ -177,6 +186,29 @@ export default function App() {
     setView('overview')
   }
 
+  function openWake() {
+    setWakeMode('listening')
+    setWakeOpen(true)
+  }
+
+  function closeWake() {
+    setWakeOpen(false)
+    setWakeMode('standby')
+  }
+
+  useEffect(() => {
+    function handleShortcut(event: KeyboardEvent) {
+      if (event.altKey && event.key.toLowerCase() === 'f' &&
+        !event.ctrlKey && !event.metaKey && !event.repeat) {
+        event.preventDefault()
+        setWakeMode('listening')
+        setWakeOpen(true)
+      }
+    }
+    window.addEventListener('keydown', handleShortcut)
+    return () => window.removeEventListener('keydown', handleShortcut)
+  }, [])
+
   const nav: { id: View; title: string; icon: typeof Activity }[] = [
     { id: 'overview', title: 'Overview', icon: Activity },
     { id: 'missions', title: 'Mission planner', icon: ClipboardList },
@@ -211,6 +243,7 @@ export default function App() {
         <header className="topbar">
           <div className="breadcrumb">FRIDAY <span>/</span> Mission Control <span>/</span> {view === 'overview' ? 'Overview' : view === 'missions' ? 'Missions' : 'Activity'}</div>
           <div className="top-actions">
+            <button className="wake-top-launch" onClick={openWake} aria-label="Open FRIDAY wake orb demo"><Sparkles size={16} /> Wake orb</button>
             <span className="connect online"><span className="dot" /> STANDALONE PREVIEW</span>
             <button className="icon-button" onClick={() => setHelp(value => !value)}
               aria-label="About standalone mode" aria-expanded={help}><Info size={18} /></button>
@@ -240,6 +273,10 @@ export default function App() {
                   <MetalText font="600 26px/1.2 Inter" color="#E7F8FF">FRIDAY</MetalText>
                   <h2>{orbState === 'breathing' ? 'STANDBY' : orbState === 'working' ? 'ACTIVE PREVIEW' : 'THINKING PREVIEW'}</h2>
                   <p>{orbDescription} · No microphone or AI connected</p>
+                  <button className="wake-main-launch" onClick={openWake}>
+                    <Sparkles size={17} /> Simulate "Hey FRIDAY" <ArrowUpRight size={16} />
+                  </button>
+                  <div className="wake-hint">Siri-inspired full-screen wake experience · Touch or Alt+F</div>
                   <div className="preview-switch" role="group" aria-label="Visualizer preview state">
                     {previews.map(item => <button key={item.state}
                       aria-pressed={orbState === item.state}
@@ -381,6 +418,7 @@ export default function App() {
           </a>
         </footer>
       </main>
+      {wakeOpen && <WakeOrb mode={wakeMode} onModeChange={setWakeMode} onClose={closeWake} />}
     </div>
   )
 }
