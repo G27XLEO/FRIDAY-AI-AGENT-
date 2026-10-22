@@ -1,5 +1,8 @@
 # FRIDAY AI Agent
 
+> **New optional local AI Agent Team:** six specialists, custom bots, local Ollama, SQLite chat, and a private React Agent Team tab. See [Agent Team setup](docs/AGENT_TEAM.md). The existing orb/mission planner remains a standalone preview.
+
+
 A production-oriented realtime voice-first AI assistant built around **LiveKit Agents**, **Groq**, **ElevenLabs**, **Silero VAD**, turn detection, **FastAPI**, and a custom **MCP server**.
 
 FRIDAY is a cross-platform mission-control assistant: concise, proactive, technically precise, calm under pressure, and suitable for local development or server deployment.

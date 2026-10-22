@@ -8,9 +8,10 @@ import { ThinkingOrb } from 'thinking-orbs'
 import { BorderBeam } from 'border-beam'
 import { MetalFx, MetalText } from 'metal-fx'
 import { WakeOrb, type WakeMode } from './components/WakeOrb'
+import AgentTeam from './components/AgentTeam'
 import './styles.css'
 
-type View = 'overview' | 'missions' | 'activity'
+type View = 'overview' | 'missions' | 'activity' | 'team'
 type VisualState = 'breathing' | 'working' | 'solving'
 type MissionStep = { id: string; label: string; done: boolean }
 type Mission = {
@@ -213,6 +214,7 @@ export default function App() {
     { id: 'overview', title: 'Overview', icon: Activity },
     { id: 'missions', title: 'Mission planner', icon: ClipboardList },
     { id: 'activity', title: 'Activity log', icon: Clock3 },
+    { id: 'team', title: 'Agent Team', icon: Bot },
   ]
   const orbDescription = previews.find(item => item.state === orbState)?.description || 'Visual preview'
 
@@ -233,15 +235,15 @@ export default function App() {
           ))}
         </nav>
         <div className="side-foot">
-          <div><ShieldCheck size={17} /> LOCAL / INTERFACE ONLY</div>
-          <p>Nothing here connects to LiveKit, an AI model, or a backend service.</p>
+          <div><ShieldCheck size={17} /> PRIVATE WORKSPACE</div>
+          <p>Mission planner is offline. Agent Team optionally connects to local Ollama via FastAPI.</p>
           <p>{storageAvailable ? 'Your missions are saved in this browser.' : 'Browser storage unavailable: changes are temporary.'}</p>
         </div>
       </aside>
 
       <main className="main">
         <header className="topbar">
-          <div className="breadcrumb">FRIDAY <span>/</span> Mission Control <span>/</span> {view === 'overview' ? 'Overview' : view === 'missions' ? 'Missions' : 'Activity'}</div>
+          <div className="breadcrumb">FRIDAY <span>/</span> Mission Control <span>/</span> {view === 'overview' ? 'Overview' : view === 'missions' ? 'Missions' : view === 'team' ? 'Agent Team' : 'Activity'}</div>
           <div className="top-actions">
             <button className="wake-top-launch" onClick={openWake} aria-label="Open FRIDAY wake orb demo"><Sparkles size={16} /> Wake orb</button>
             <span className="connect online"><span className="dot" /> STANDALONE PREVIEW</span>
@@ -252,7 +254,7 @@ export default function App() {
 
         {help && (
           <div className="help-banner" role="status">
-            This is an interactive frontend prototype. The orb states are manually selected
+            The overview, orb and mission planner are offline prototypes. Agent Team is a separate, optional local-model integration. The orb states are manually selected
             visual previews, mission checkboxes are local notes, and no AI inference or
             audio processing occurs. No network requests are made by the application.
           </div>
@@ -389,6 +391,8 @@ export default function App() {
           </>
         )}
 
+        {view === 'team' && <AgentTeam />}
+
         {view === 'activity' && (
           <>
             <div className="intro">
@@ -412,7 +416,7 @@ export default function App() {
         )}
 
         <footer>
-          <span>FRIDAY / STANDALONE INTERFACE · NO LIVEKIT / NO AI CONNECTION</span>
+          <span>{view === 'team' ? 'FRIDAY / LOCAL AI AGENT TEAM · NO LIVEKIT REQUIRED' : 'FRIDAY / STANDALONE INTERFACE · NO LIVEKIT / NO AI CONNECTION'}</span>
           <a href="https://libraries.dev/" target="_blank" rel="noreferrer">
             Visual effects by Libraries.dev <ArrowUpRight size={14}/>
           </a>

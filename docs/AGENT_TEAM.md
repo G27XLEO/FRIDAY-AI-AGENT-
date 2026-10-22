@@ -20,32 +20,32 @@ accounts. Replies should never be treated as evidence of completed work.
 
 Install [Ollama](https://ollama.com) and pull a local model:
 
-\`\`\`bash
+```bash
 ollama pull llama3.2
 ollama serve
-\`\`\`
+```
 
 In a separate terminal from the repository root:
 
-\`\`\`bash
+```bash
 python -m venv .venv
 source .venv/bin/activate
 pip install fastapi uvicorn httpx
 export FRIDAY_TEAM_API_TOKEN="$(python -c 'import secrets; print(secrets.token_urlsafe(32))')"
 export FRIDAY_OLLAMA_MODEL=llama3.2
 python -m uvicorn friday_agent.web_server:app --host 127.0.0.1 --port 8001
-\`\`\`
+```
 
 Keep the printed/configured token somewhere private in that session. For subsequent
 restarts, use the same token or create a new one and reconnect the UI.
 
 Start the React development UI in a third terminal:
 
-\`\`\`bash
+```bash
 cd web
 npm install
 npm run dev
-\`\`\`
+```
 
 Open http://localhost:3000, choose **Agent Team**, and enter the
 FRIDAY_TEAM_API_TOKEN. Vite proxies only /api/team to the local FastAPI service.
@@ -75,6 +75,6 @@ This MVP is **single-user**, not a multi-tenant team service.
 If a full FRIDAY backend environment is already installed, no new Python
 dependencies are required. Run the focused tests with:
 
-\`\`\`bash
+```bash
 python -m pytest -q tests/test_team_api.py
-\`\`\`
+```

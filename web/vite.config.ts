@@ -6,6 +6,7 @@ export default defineConfig({
   server: {
     host: '0.0.0.0',
     port: 3000,
+    proxy: { '/api/team': { target: 'http://127.0.0.1:8001', changeOrigin: false } },
   },
   build: {
     outDir: 'dist',

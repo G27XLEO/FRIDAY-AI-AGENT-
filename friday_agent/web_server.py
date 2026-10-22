@@ -18,6 +18,7 @@ import uvicorn
 
 from friday_agent.config import config
 from friday_agent.observability import metrics, telemetry
+from friday_agent.team_api import router as team_router
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 logger = logging.getLogger("friday_agent.web_server")
@@ -95,6 +96,9 @@ app.add_middleware(
     allow_methods=["GET"],
     allow_headers=[],
 )
+
+
+app.include_router(team_router)
 
 
 @app.get("/api/status")
