@@ -20,7 +20,8 @@ for (const [pattern, label] of forbidden) {
   assert.doesNotMatch(app, pattern, 'Standalone UI must not use ' + label)
   assert.doesNotMatch(wake, pattern, 'Wake orb must not use ' + label)
 }
-assert.doesNotMatch(vite, /proxy\s*:/, 'Standalone Vite must not proxy to a backend')
+assert.match(vite, /['"]\/api\/team['"]\s*:/, 'Optional Agent Team proxy must be scoped')
+assert.doesNotMatch(vite, /['"]\/api\/(?!team)/, 'Standalone frontend must not proxy other APIs')
 assert.match(app, /<ThinkingOrb /, 'Thinking Orbs visualizer must exist')
 assert.match(app, /<BorderBeam /, 'Border Beam effect must exist')
 assert.match(app, /<MetalFx /, 'Metal FX controls must exist')
@@ -34,4 +35,4 @@ assert.match(wake, /id: 'speaking'/, 'Wake orb must have a speaking preview')
 assert.match(wake, /Escape/, 'Wake overlay must support keyboard dismiss')
 assert.match(wake, /Microphone off/, 'Wake overlay must disclose demo-only operation')
 
-process.stdout.write('Standalone UI contract verified: no AI, voice, or backend connection.\\n')
+process.stdout.write('Standalone orb and mission planner remain offline; optional Agent Team is isolated.\\n')
