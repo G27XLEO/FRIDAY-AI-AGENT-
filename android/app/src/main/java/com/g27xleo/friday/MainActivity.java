@@ -99,6 +99,10 @@ public class MainActivity extends Activity {
         Button listen = button("🎙  TAP TO LISTEN", 0xFF20577E);
         outer.addView(listen, fullButtonParams());
         listen.setOnClickListener(view -> startVoice());
+        spacer(outer, 10);
+        Button team = button("✦  OPEN AI AGENT TEAM", 0xFF087F9F);
+        team.setOnClickListener(view -> startActivity(new Intent(this, AgentTeamActivity.class)));
+        outer.addView(team, fullButtonParams());
         spacer(outer, 13);
 
         transcriptLabel = label("Say 'FRIDAY, check systems' or enter a command.", 13,
@@ -156,9 +160,9 @@ public class MainActivity extends Activity {
         TextView limits = label(
                 "Only explicit local commands are available: time, date, battery, "
                 + "system status, open settings, WiFi, Bluetooth, display settings, or browser.\n\n"
-                + "The Android speech provider may require internet or process audio "
-                + "according to its own policy. This app has no AI model, LiveKit, "
-                + "background hotword, device administration or unrestricted automation.",
+                + "The Android speech provider may use internet or process audio through its own service. "
+                + "Agent Team is an optional interface requiring a trusted HTTPS backend and "
+                + "Ollama model. No bundled model, background hotword or unrestricted automation.",
                 12, 0xFF90A8C0, false);
         limits.setLineSpacing(dp(3), 1f);
         outer.addView(limits);

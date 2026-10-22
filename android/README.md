@@ -103,3 +103,20 @@ device tests.
 
 The React `web/` dashboard remains standalone and does not connect to the
 Android voice companion.
+
+## FRIDAY v0.2: Agent Team and icon
+
+The Android app's **OPEN AI AGENT TEAM** button opens the bundled React
+mission-control and multi-agent UI. The visual workspace is accessible
+offline. Team reasoning requires an external trusted HTTPS backend running
+FastAPI plus Ollama, and a private FRIDAY_TEAM_API_TOKEN. Configure the backend
+with `FRIDAY_CORS_ORIGINS=https://appassets.androidplatform.net` to permit
+requests from the embedded WebView. The model does not run in this APK.
+
+The app's adaptive launcher icon follows the approved simple design: a silver
+circular pause symbol against navy, with a fine blue edge. The exported PNG
+icon pack (48–1024px) is available with the accompanying chat deliverables.
+
+Android permission INTERNET supports explicit HTTPS API calls; RECORD_AUDIO
+remains foreground-only and gated by the user's permission. No unrestricted
+device control, system-wide wake-word detection or bundled API keys.

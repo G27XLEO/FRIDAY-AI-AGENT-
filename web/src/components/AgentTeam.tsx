@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import {
-  Bot, BrainCircuit, Check, ChevronRight, PlusCircle, KeyRound,
+  BrainCircuit, Check, ChevronRight, PlusCircle, KeyRound,
   Loader2, LockKeyhole, MessageSquare, Send, ShieldCheck, Users, X,
 } from 'lucide-react'
 import { BotAvatar } from 'bot-avatars'
