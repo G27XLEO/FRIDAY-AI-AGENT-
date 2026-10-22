@@ -32,6 +32,7 @@ python -m venv .venv
 source .venv/bin/activate
 pip install fastapi uvicorn httpx
 export FRIDAY_TEAM_API_TOKEN="$(python -c 'import secrets; print(secrets.token_urlsafe(32))')"
+echo "Agent Team token: $FRIDAY_TEAM_API_TOKEN"
 export FRIDAY_OLLAMA_MODEL=llama3.2
 python -m uvicorn friday_agent.web_server:app --host 127.0.0.1 --port 8001
 ```
@@ -76,5 +77,5 @@ If a full FRIDAY backend environment is already installed, no new Python
 dependencies are required. Run the focused tests with:
 
 ```bash
-python -m pytest -q tests/test_team_api.py
+python -m unittest tests.test_team_api -v
 ```

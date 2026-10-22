@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import {
-  Bot, BrainCircuit, Check, ChevronRight, CirclePlus, KeyRound,
-  LoaderCircle, LockKeyhole, MessageSquare, Send, ShieldCheck, Users, X,
+  Bot, BrainCircuit, Check, ChevronRight, PlusCircle, KeyRound,
+  Loader2, LockKeyhole, MessageSquare, Send, ShieldCheck, Users, X,
 } from 'lucide-react'
 import './AgentTeam.css'
 
@@ -291,7 +291,7 @@ export default function AgentTeam() {
                 </form>
               ) : (
                 <button className="team-add" disabled={agents.length >= 12}
-                  onClick={() => setShowCreator(true)}><CirclePlus size={16} />
+                  onClick={() => setShowCreator(true)}><PlusCircle size={16} />
                   Add specialist</button>
               )}
             </div>
@@ -299,7 +299,7 @@ export default function AgentTeam() {
               <div className="team-section-title"><MessageSquare size={17}/><b>Conversations</b></div>
               <button className="team-new-thread" disabled={busy}
                 onClick={() => { void newThread().catch(exc => setError(String(exc))) }}>
-                <CirclePlus size={16}/> New conversation
+                <PlusCircle size={16}/> New conversation
               </button>
               <div className="team-threads">
                 {threads.map(thread => (
@@ -346,7 +346,7 @@ export default function AgentTeam() {
                 </article>
               ))}
               {busy && (
-                <div className="team-thinking"><LoaderCircle size={18}/>
+                <div className="team-thinking"><Loader2 size={18}/>
                   Specialists are collaborating through your local model…</div>
               )}
             </div>
@@ -364,7 +364,7 @@ export default function AgentTeam() {
               <div>
                 <small><LockKeyhole size={13}/> Local backend · Ctrl+Enter to send</small>
                 <button type="submit" disabled={busy || !draft.trim()}>
-                  {busy ? <LoaderCircle size={17}/> : <Send size={17}/>}
+                  {busy ? <Loader2 size={17}/> : <Send size={17}/>}
                   {busy ? 'Working' : 'Delegate'}
                 </button>
               </div>
