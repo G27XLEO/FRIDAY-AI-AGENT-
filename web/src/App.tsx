@@ -9,6 +9,7 @@ import { BorderBeam } from 'border-beam'
 import { MetalFx, MetalText } from 'metal-fx'
 import { WakeOrb, type WakeMode } from './components/WakeOrb'
 import AgentTeam from './components/AgentTeam'
+import BrandExperience from './components/BrandExperience'
 import './styles.css'
 
 type View = 'overview' | 'missions' | 'activity' | 'team'
@@ -308,6 +309,7 @@ export default function App() {
                 </MetalFx>
               </article>
             </section>
+            <BrandExperience onTeam={() => setView('team')} onWake={openWake} />
             <section className="stats" aria-label="Local workspace summary">
               <Stat title="LOCAL MISSIONS" value={String(workspace.missions.length)} detail="Saved in this browser" icon={Layers3}/>
               <Stat title="STEPS CHECKED" value={String(completed)} detail="Manually completed" icon={CheckCircle2}/>

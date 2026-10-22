@@ -3,6 +3,8 @@ import {
   Bot, BrainCircuit, Check, ChevronRight, PlusCircle, KeyRound,
   Loader2, LockKeyhole, MessageSquare, Send, ShieldCheck, Users, X,
 } from 'lucide-react'
+import { BotAvatar } from 'bot-avatars'
+import { VoiceBeam } from 'voice-glow'
 import './AgentTeam.css'
 
 type Agent = {
@@ -24,6 +26,13 @@ type TeamResponse = Conversation & { agents_used: string[]; warnings: string[] }
 type Health = { ready: boolean; provider: string; model: string }
 
 const TOKEN_KEY = 'friday-team-token'
+const HOST_KEY = 'friday-team-api-host'
+const avatarTypes = ['mech','hexagon','droid','star','cloud','cat','alien','clover','ghost','square','circle','flower'] as const
+
+function readHost() {
+  try { return window.localStorage.getItem(HOST_KEY) || '' }
+  catch { return '' }
+}
 
 function readToken() {
   try { return window.sessionStorage.getItem(TOKEN_KEY) || '' }
@@ -33,6 +42,8 @@ function readToken() {
 export default function AgentTeam() {
   const [token, setToken] = useState(readToken)
   const [enteredToken, setEnteredToken] = useState('')
+  const [apiHost, setApiHost] = useState(readHost)
+  const [hostInput, setHostInput] = useState(readHost)
   const [agents, setAgents] = useState<Agent[]>([])
   const [threads, setThreads] = useState<Thread[]>([])
   const [activeId, setActiveId] = useState('')
@@ -50,7 +61,7 @@ export default function AgentTeam() {
 
   async function request<T>(path: string, method = 'GET', body?: object,
                             credential = token): Promise<T> {
-    const response = await fetch('/api/team' + path, {
+    const response = await fetch((apiHost || '') + '/api/team' + path, {
       method,
       headers: {
         Authorization: 'Bearer ' + credential,
@@ -68,11 +79,11 @@ export default function AgentTeam() {
   }
 
   useEffect(() => {
-    fetch('/api/team/health')
+    fetch((apiHost || '') + '/api/team/health')
       .then(response => response.ok ? response.json() as Promise<Health> : null)
       .then(data => setHealth(data))
       .catch(() => setHealth(null))
-  }, [])
+  }, [apiHost])
 
   useEffect(() => {
     if (!token) { setConnected(false); return }
@@ -106,13 +117,33 @@ export default function AgentTeam() {
     return () => { cancelled = true }
     // The token is the only input needed to start a new authenticated session.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token])
+  }, [token, apiHost])
 
   function connect(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const value = enteredToken.trim()
     if (!value) return
+    const origin = hostInput.trim().replace(/\/+$/, '')
+    if (origin && !/^https:\/\/[a-z0-9][^\s]*$/i.test(origin)) {
+      setError('Use a trusted HTTPS server origin, such as https://friday.example.com')
+      return
+    }
+    if (location.hostname === 'appassets.androidplatform.net' && !origin) {
+      setError('Enter the HTTPS address of your FRIDAY backend to use Agent Team in the APK.')
+      return
+    }
+    if (origin) {
+      try {
+        const url = new URL(origin)
+        if (url.pathname !== '/' || url.username || url.password || url.search || url.hash) throw new Error('invalid')
+      } catch {
+        setError('Enter only the trusted HTTPS server origin, without a path or credentials.')
+        return
+      }
+    }
+    try { window.localStorage.setItem(HOST_KEY, origin) } catch { /* private mode */ }
     try { window.sessionStorage.setItem(TOKEN_KEY, value) } catch { /* private mode */ }
+    setApiHost(origin)
     setToken(value)
     setEnteredToken('')
   }
@@ -211,6 +242,8 @@ export default function AgentTeam() {
     } finally { setBusy(false) }
   }
 
+  const agentAvatar = (id: string) => avatarTypes[Math.max(0, agents.findIndex(agent => agent.id === id)) % avatarTypes.length]
+
   const agentName = (id: string | null) =>
     agents.find(agent => agent.id === id)?.name || 'Specialist'
 
@@ -236,8 +269,10 @@ export default function AgentTeam() {
           <div className="team-connect-icon"><KeyRound size={26} /></div>
           <h2>Connect to your own agent team</h2>
           <p>Run FRIDAY FastAPI and Ollama on your computer. Enter the private
-            FRIDAY_TEAM_API_TOKEN configured on the backend.</p>
+            FRIDAY_TEAM_API_TOKEN configured on the backend. The Android app needs a trusted HTTPS backend address.</p>
           <form onSubmit={connect}>
+            <input type="url" aria-label="FRIDAY backend HTTPS origin" placeholder="Backend HTTPS origin (optional in web development)"
+              value={hostInput} onChange={event => setHostInput(event.target.value)} />
             <input type="password" aria-label="Agent Team API token" required
               value={enteredToken} onChange={event => setEnteredToken(event.target.value)}
               placeholder="Private Agent Team token" autoComplete="off" />
@@ -267,7 +302,9 @@ export default function AgentTeam() {
                   <button className={'team-agent ' + (selected.includes(agent.id) ? 'active' : '')}
                     onClick={() => selectAgent(agent.id)} aria-pressed={selected.includes(agent.id)}
                     key={agent.id} title={agent.instructions}>
-                    <span className="team-avatar"><Bot size={17} /></span>
+                    <span className="team-avatar team-character"><BotAvatar type={agentAvatar(agent.id)} size={32}
+                      state={busy && (selected.length === 0 || selected.includes(agent.id)) ? 'working' : 'default'}
+                      shading="plastic" theme="dark" /></span>
                     <span><b>{agent.name}</b><small>{agent.specialty}</small></span>
                     {selected.includes(agent.id) && <Check size={15} />}
                   </button>
@@ -352,6 +389,7 @@ export default function AgentTeam() {
             </div>
             {error && <p className="team-error" role="alert">{error}</p>}
             <form onSubmit={send} className="team-composer">
+              <VoiceBeam level={0} processing={busy} colorVariant="ocean" strength={0.65} theme="dark">
               <textarea value={draft} rows={3} maxLength={4000}
                 onChange={event => setDraft(event.target.value)}
                 onKeyDown={event => {
@@ -361,6 +399,7 @@ export default function AgentTeam() {
                   }
                 }}
                 placeholder="Assign a task to your AI team…" aria-label="Team task" />
+              </VoiceBeam>
               <div>
                 <small><LockKeyhole size={13}/> Local backend · Ctrl+Enter to send</small>
                 <button type="submit" disabled={busy || !draft.trim()}>
