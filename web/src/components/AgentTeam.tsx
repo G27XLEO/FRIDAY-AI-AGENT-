@@ -389,7 +389,7 @@ export default function AgentTeam() {
             </div>
             {error && <p className="team-error" role="alert">{error}</p>}
             <form onSubmit={send} className="team-composer">
-              <VoiceBeam level={0} processing={busy} colorVariant="ocean" strength={0.65} theme="dark">
+              <VoiceBeam level={busy ? 0.85 : 0} colorVariant="ocean" strength={0.65} theme="dark">
               <textarea value={draft} rows={3} maxLength={4000}
                 onChange={event => setDraft(event.target.value)}
                 onKeyDown={event => {
