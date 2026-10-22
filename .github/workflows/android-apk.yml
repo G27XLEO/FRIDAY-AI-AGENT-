@@ -7,6 +7,7 @@ on:
   pull_request:
     paths:
       - "android/**"
+      - "web/**"
       - ".github/workflows/android-apk.yml"
   workflow_dispatch:
 
@@ -20,6 +21,24 @@ jobs:
     steps:
       - name: Check out source
         uses: actions/checkout@v4
+
+      - name: Configure Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Build and verify bundled React interface
+        run: |
+          npm --prefix web install --no-audit --no-fund
+          npm --prefix web run test:standalone
+          npm --prefix web run type-check
+          npm --prefix web run build
+
+      - name: Copy React distribution into Android assets
+        run: |
+          mkdir -p android/app/src/main/assets/friday
+          cp -a web/dist/. android/app/src/main/assets/friday/
+          test -s android/app/src/main/assets/friday/index.html
 
       - name: Configure Java 17
         uses: actions/setup-java@v4

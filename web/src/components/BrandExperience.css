@@ -1,0 +1,16 @@
+.brand-experience{margin:21px 0 0;position:relative}
+.brand-panel{padding:21px 30px;min-height:220px;display:flex;gap:30px;align-items:center;overflow:hidden;background:linear-gradient(125deg,#0c1828,#101d2e 56%,#0c1824)}
+.brand-render{width:190px;min-width:190px;height:190px;display:grid;place-items:center}
+.brand-render-frame{width:186px;height:186px;border-radius:30px;background:radial-gradient(circle,#15415d,#050c17);overflow:hidden}
+.brand-render-frame img{height:100%;width:100%;object-fit:contain}
+.brand-info{flex:1;min-width:0}
+.brand-info h2{font-size:clamp(20px,2.5vw,27px);letter-spacing:-.035em;margin:10px 0}
+.brand-info p{font-size:13px;line-height:1.7;color:#9cb4c7;max-width:570px;margin:0}
+.brand-tags{display:flex;flex-wrap:wrap;gap:8px;margin:15px 0 0}
+.brand-tags span{font-size:11px;color:#7bd8e5;border:1px solid rgba(94,206,226,.25);border-radius:8px;padding:6px 9px;display:inline-flex;gap:5px;align-items:center}
+.brand-liquid-shell{display:flex;align-items:center;gap:13px;min-height:78px}
+.brand-liquid-action{width:40px;height:40px;display:grid;place-items:center;border:0;background:transparent;color:white;border-radius:50%;font-size:12px;cursor:pointer}
+.brand-liquid-main{transform:rotate(-45deg)}
+.brand-dock-caption{color:#80abbb;font-size:11px}
+@media(max-width:680px){.brand-panel{padding:18px;gap:14px;flex-direction:column;text-align:center}.brand-render{width:155px;min-width:155px;height:155px}.brand-render-frame{height:150px;width:150px}.brand-tags,.brand-liquid-shell{justify-content:center}}
+@media(prefers-reduced-motion:reduce){.brand-experience *{animation-duration:.01ms!important;transition-duration:.01ms!important}}

@@ -16,7 +16,12 @@
     "metal-fx": "^2.0.11",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "thinking-orbs": "*"
+    "thinking-orbs": "*",
+    "bot-avatars": "*",
+    "voice-glow": "*",
+    "liquid-gooey": "*",
+    "img-fx": "*",
+    "three": "^0.170.0"
   },
   "devDependencies": {
     "@types/react": "^18.2.43",

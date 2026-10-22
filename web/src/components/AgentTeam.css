@@ -73,3 +73,8 @@
 @media(max-width:1050px){.team-layout{grid-template-columns:220px minmax(0,1fr)}.team-chat-head .team-safe{display:none}}
 @media(max-width:760px){.team-heading{align-items:flex-start;flex-direction:column}.team-heading-status{align-items:flex-start;text-align:left}.team-layout{grid-template-columns:1fr}.team-side{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.team-disconnect{grid-column:1/-1}.team-chat{min-height:500px}.team-message-scroll{min-height:300px;max-height:530px}}
 @media(max-width:530px){.team-side{grid-template-columns:1fr}.team-chat-head{padding:13px}.team-message-scroll{padding:12px}.team-connect{padding:20px}.team-connect form{flex-direction:column}.team-composer small{display:none}}
+
+/* Libraries.dev visual integration */
+.team-character{background:transparent!important;width:36px!important;height:36px!important;overflow:visible}
+.team-composer>div:first-child{position:relative;border-radius:12px;overflow:hidden}
+.team-composer textarea{display:block}
