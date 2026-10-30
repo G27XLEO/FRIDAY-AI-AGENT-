@@ -1,0 +1,3 @@
+[submodule "integrations/friday-tony-stark-demo"]
+	path = integrations/friday-tony-stark-demo
+	url = https://github.com/SAGAR-TAMANG/friday-tony-stark-demo.git
