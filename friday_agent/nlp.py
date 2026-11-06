@@ -25,7 +25,7 @@ _INTENT_PATTERNS = (
     ("file", ("file", "folder", "directory", "read", "write", "edit")),
     ("memory", ("remember", "recall", "forget", "memory")),
 )
-_URGENT_WORDS = {"urgent", "asap", "immediately", "critical", "emergency"}
+_URGENT_WORDS = {"urgent", "urgently", "asap", "immediately", "critical", "emergency"}
 
 def _normalize(text: str) -> str:
     return re.sub(r"\s+", " ", text.strip()).casefold() if text else ""

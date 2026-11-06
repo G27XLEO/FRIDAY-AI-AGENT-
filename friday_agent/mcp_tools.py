@@ -186,7 +186,7 @@ def write_workspace_file(path: str, content: str, overwrite: bool = False) -> To
         target = _resolve_workspace_path(path)
         encoded_len = len(content.encode("utf-8"))
         if encoded_len > MAX_WRITE_BYTES:
-            return ToolResult(False, f"Content exceeds {MAX_WRITE_BYTES} bytes", {"path": str(target)})
+            return ToolResult(False, f"Content exceeding the allowed limit of {MAX_WRITE_BYTES} bytes", {"path": str(target)})
         if target.exists() and not overwrite:
             return ToolResult(False, "File already exists; pass overwrite=true", {"path": str(target)})
         target.parent.mkdir(parents=True, exist_ok=True)
