@@ -1,168 +1,441 @@
-import { useCallback, useEffect, useState } from 'react'
-import type { ReactNode } from 'react'
+import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import {
-  Activity, AlertTriangle, ArrowUpRight, CheckCircle2,
-  CircleDot, Clock3, Cpu, Gauge, Radio, RefreshCw, Server, ShieldCheck,
-  Signal, Wifi, WifiOff, Zap,
+  Activity, ArrowRight, ArrowUpRight, Bot, Check, CheckCircle2,
+  ClipboardList, Clock3, Cpu, Info, Layers3, ListChecks,
+  Plus, RotateCcw, ShieldCheck, Sparkles, Trash2, Zap,
 } from 'lucide-react'
+import { ThinkingOrb } from 'thinking-orbs'
+import { BorderBeam } from 'border-beam'
+import { MetalFx, MetalText } from 'metal-fx'
+import { WakeOrb, type WakeMode } from './components/WakeOrb'
+import './styles.css'
 
-type Metrics = {
-  timestamp?: string
-  state?: string
-  uptime_seconds?: number
-  memory_usage_percent?: number
-  active_connections?: number
-  api_calls_total?: number
-  api_calls_failed?: number
-  avg_response_time_ms?: number
-  tool_execution_count?: number
-  tool_execution_failures?: number
-  health_score?: number
-  system?: { platform?: string; python_version?: string }
+type View = 'overview' | 'missions' | 'activity'
+type VisualState = 'breathing' | 'working' | 'solving'
+type MissionStep = { id: string; label: string; done: boolean }
+type Mission = {
+  id: string
+  title: string
+  criteria: string
+  steps: MissionStep[]
+  createdAt: string
 }
-type EventItem = { timestamp?: string; time?: string; level?: string; event?: string; message?: string; name?: string }
-type StatusPayload = { identity?: string; metrics?: Metrics; memory?: Record<string, unknown> }
+type LocalEvent = { id: string; message: string; createdAt: string }
+type Workspace = { missions: Mission[]; events: LocalEvent[] }
 
-const number = (value: number | undefined, digits = 0) =>
-  typeof value === 'number' && Number.isFinite(value)
-    ? value.toLocaleString(undefined, { maximumFractionDigits: digits, minimumFractionDigits: digits })
-    : '—'
-const percent = (value: number | undefined) => typeof value === 'number' ? `${number(value, 1)}%` : '—'
-const duration = (value: number | undefined) => {
-  if (typeof value !== 'number' || !Number.isFinite(value)) return '—'
-  const seconds = Math.max(0, Math.floor(value))
-  const hours = Math.floor(seconds / 3600)
-  const minutes = Math.floor((seconds % 3600) / 60)
-  return hours ? `${hours}h ${minutes}m` : minutes ? `${minutes}m ${seconds % 60}s` : `${seconds}s`
-}
-const time = (value?: string) => {
-  if (!value) return 'Awaiting telemetry'
-  const date = new Date(value)
-  return Number.isNaN(date.getTime()) ? 'Time unavailable' : date.toLocaleTimeString()
+const STORAGE_KEY = 'friday-standalone-workspace-v1'
+const DEFAULT_STEPS = 'Define the objective\nPrepare the execution plan\nReview the result'
+
+function uniqueId() {
+  return typeof crypto !== 'undefined' && 'randomUUID' in crypto
+    ? crypto.randomUUID()
+    : String(Date.now()) + '-' + Math.random().toString(36).slice(2)
 }
 
-function App() {
-  const [metrics, setMetrics] = useState<Metrics | null>(null)
-  const [identity, setIdentity] = useState('FRIDAY')
-  const [events, setEvents] = useState<EventItem[]>([])
-  const [connected, setConnected] = useState(false)
-  const [lastUpdated, setLastUpdated] = useState<string>()
-  const [error, setError] = useState<string>()
-  const [refreshing, setRefreshing] = useState(false)
+const previews: { state: VisualState; label: string; description: string }[] = [
+  { state: 'breathing', label: 'Standby', description: 'Ambient visual state' },
+  { state: 'working', label: 'Active', description: 'Active visual state' },
+  { state: 'solving', label: 'Thinking', description: 'Processing visual state' },
+]
 
-  const refresh = useCallback(async (manual = false) => {
-    if (manual) setRefreshing(true)
-    try {
-      const [statusResponse, metricsResponse, eventsResponse] = await Promise.all([
-        fetch('/api/status', { headers: { Accept: 'application/json' } }),
-        fetch('/api/metrics', { headers: { Accept: 'application/json' } }),
-        fetch('/api/events?limit=8', { headers: { Accept: 'application/json' } }),
-      ])
-      if (!statusResponse.ok || !metricsResponse.ok) throw new Error('FRIDAY API returned an unsuccessful response')
-      const status = await statusResponse.json() as StatusPayload
-      const nextMetrics = await metricsResponse.json() as Metrics
-      setIdentity(status.identity || 'FRIDAY')
-      setMetrics({ ...status.metrics, ...nextMetrics })
-      if (eventsResponse.ok) {
-        const nextEvents = await eventsResponse.json() as EventItem[]
-        setEvents(Array.isArray(nextEvents) ? nextEvents.slice(-8).reverse() : [])
-      }
-      setConnected(true)
-      setError(undefined)
-      setLastUpdated(new Date().toISOString())
-    } catch (cause) {
-      setConnected(false)
-      setError(cause instanceof Error ? cause.message : 'Unable to reach FRIDAY API')
-    } finally {
-      if (manual) setRefreshing(false)
+function readWorkspace(): Workspace {
+  try {
+    const stored = window.localStorage.getItem(STORAGE_KEY)
+    if (!stored) return { missions: [], events: [] }
+    const value: unknown = JSON.parse(stored)
+    if (!value || typeof value !== 'object') return { missions: [], events: [] }
+    const data = value as Partial<Workspace>
+    if (!Array.isArray(data.missions) || !Array.isArray(data.events)) {
+      return { missions: [], events: [] }
     }
-  }, [])
+    const missions = data.missions.filter((m): m is Mission =>
+      Boolean(m && typeof m.id === 'string' && typeof m.title === 'string' &&
+        typeof m.criteria === 'string' && Array.isArray(m.steps) &&
+        m.steps.every(s => s && typeof s.id === 'string' &&
+          typeof s.label === 'string' && typeof s.done === 'boolean'))
+    ).slice(0, 30)
+    const events = data.events.filter((e): e is LocalEvent =>
+      Boolean(e && typeof e.id === 'string' &&
+        typeof e.message === 'string' && typeof e.createdAt === 'string')
+    ).slice(0, 40)
+    return { missions, events }
+  } catch {
+    // Browser storage may be blocked. The interface still works in memory.
+    return { missions: [], events: [] }
+  }
+}
 
-  useEffect(() => {
-    void refresh()
-    const interval = window.setInterval(() => void refresh(), 5000)
-    return () => window.clearInterval(interval)
-  }, [refresh])
+function shortTime(iso: string) {
+  const date = new Date(iso)
+  return Number.isNaN(date.valueOf()) ? 'Local' : date.toLocaleString()
+}
 
-  const state = metrics?.state || (connected ? 'idle' : 'offline')
-  const health = metrics?.health_score
-  const failureCount = (metrics?.api_calls_failed || 0) + (metrics?.tool_execution_failures || 0)
-
+function Stat({ title, value, detail, icon: Icon }: {
+  title: string
+  value: string
+  detail: string
+  icon: typeof Activity
+}) {
   return (
-    <main className="app-shell">
-      <div className="ambient ambient-one" aria-hidden="true" />
-      <div className="ambient ambient-two" aria-hidden="true" />
-      <header className="topbar">
-        <a className="brand" href="/" aria-label="FRIDAY Mission Control home">
-          <span className="brand-mark"><Activity size={22} /></span>
-          <span><strong>FRIDAY</strong><small>MISSION CONTROL</small></span>
-        </a>
-        <div className="topbar-right">
-          <span className={`connection-pill ${connected ? 'is-online' : 'is-offline'}`}>
-            <span className="status-dot" />{connected ? 'SYSTEM LINKED' : 'API DISCONNECTED'}
-          </span>
-          <button className="icon-button" onClick={() => void refresh(true)} disabled={refreshing} aria-label="Refresh system status" title="Refresh">
-            <RefreshCw size={17} className={refreshing ? 'spin' : ''} />
-          </button>
-        </div>
-      </header>
-
-      <section className="hero">
-        <div>
-          <div className="eyebrow"><span className="eyebrow-line" /> REALTIME OPERATIONS</div>
-          <h1>Good to see you, <span>boss.</span></h1>
-          <p className="hero-copy">Your systems at a glance. Clear signals, live telemetry, no noise.</p>
-        </div>
-        <div className="hero-status">
-          <div className={`orb ${connected ? 'orb-live' : 'orb-offline'}`}><Radio size={24} /></div>
-          <div><span className="muted-label">AGENT STATUS</span><strong className="state-value">{state.toUpperCase()}</strong><small>{connected ? `Updated ${time(lastUpdated)}` : 'Waiting for backend connection'}</small></div>
-        </div>
-      </section>
-
-      {error && <div className="error-banner" role="status"><AlertTriangle size={17} /><span><strong>Connection issue.</strong> {error}. Check that the FRIDAY API is running.</span></div>}
-
-      <section className="metrics-grid" aria-label="System metrics">
-        <MetricCard icon={<ShieldCheck size={18} />} label="SYSTEM HEALTH" value={health === undefined ? '—' : `${number(health)}%`} detail={health === undefined ? 'No health telemetry' : health >= 80 ? 'All core signals healthy' : health >= 60 ? 'Monitor system signals' : 'Attention recommended'} accent="cyan" progress={health} />
-        <MetricCard icon={<Gauge size={18} />} label="AVG RESPONSE" value={metrics ? `${number(metrics.avg_response_time_ms, 0)} ms` : '—'} detail="Recent API response average" accent="blue" />
-        <MetricCard icon={<Cpu size={18} />} label="PROCESS MEMORY" value={percent(metrics?.memory_usage_percent)} detail="Python process memory share" accent="violet" progress={metrics?.memory_usage_percent} />
-        <MetricCard icon={<Signal size={18} />} label="ACTIVE SESSIONS" value={number(metrics?.active_connections)} detail="Current connected clients" accent="green" />
-      </section>
-
-      <section className="content-grid">
-        <div className="panel overview-panel">
-          <div className="panel-heading"><div><span className="section-kicker">LIVE TELEMETRY</span><h2>System overview</h2></div><span className="live-label"><span className="status-dot" /> LIVE</span></div>
-          <div className="overview-list">
-            <OverviewRow icon={<Server size={18} />} label="Agent identity" value={identity} />
-            <OverviewRow icon={<Activity size={18} />} label="Runtime state" value={state} status={connected} />
-            <OverviewRow icon={<Clock3 size={18} />} label="Process uptime" value={duration(metrics?.uptime_seconds)} />
-            <OverviewRow icon={<Zap size={18} />} label="Tool executions" value={number(metrics?.tool_execution_count)} />
-            <OverviewRow icon={<AlertTriangle size={18} />} label="Recorded failures" value={number(failureCount)} warn={failureCount > 0} />
-            <OverviewRow icon={connected ? <Wifi size={18} /> : <WifiOff size={18} />} label="API connectivity" value={connected ? 'Connected' : 'Offline'} status={connected} />
-          </div>
-          <div className="panel-foot"><span>Last successful sync</span><strong>{time(lastUpdated)}</strong></div>
-        </div>
-
-        <div className="panel events-panel">
-          <div className="panel-heading"><div><span className="section-kicker">ACTIVITY STREAM</span><h2>Recent events</h2></div><span className="event-count">{events.length} EVENTS</span></div>
-          {events.length ? <div className="event-list">{events.map((event, index) => {
-            const label = event.message || event.event || event.name || 'System event'
-            const stamp = event.timestamp || event.time
-            const isError = /error|fail|critical/i.test(`${event.level || ''} ${label}`)
-            return <div className="event-row" key={`${stamp || 'event'}-${index}`}><span className={`event-icon ${isError ? 'event-error' : ''}`}>{isError ? <AlertTriangle size={15} /> : <CircleDot size={15} />}</span><div className="event-copy"><strong>{label}</strong><small>{time(stamp)}</small></div><ArrowUpRight size={14} className="event-arrow" /></div>
-          })}</div> : <div className="empty-state"><Activity size={24} /><strong>No recent events</strong><span>{connected ? 'New telemetry will appear here automatically.' : 'Connect the backend to load activity.'}</span></div>}
-          <div className="panel-foot"><span>Refresh interval</span><strong>5 seconds</strong></div>
-        </div>
-      </section>
-
-      <footer className="footer"><span><span className="footer-spark">✳</span> FRIDAY <span className="footer-muted">/ INTELLIGENCE, AT A GLANCE</span></span><span>{metrics?.system?.python_version ? `PYTHON ${metrics.system.python_version}` : 'WEB CONSOLE'} <i /> {connected ? <><CheckCircle2 size={13} /> TELEMETRY ACTIVE</> : 'AWAITING CONNECTION'}</span></footer>
-    </main>
+    <article className="stat panel">
+      <div className="stat-label"><span>{title}</span><Icon size={18} aria-hidden="true" /></div>
+      <strong>{value}</strong>
+      <small>{detail}</small>
+    </article>
   )
 }
 
-function MetricCard({ icon, label, value, detail, accent, progress }: { icon: ReactNode; label: string; value: string; detail: string; accent: string; progress?: number }) {
-  return <article className={`metric-card accent-${accent}`}><div className="metric-top"><span className="metric-icon">{icon}</span><span className="metric-label">{label}</span></div><div className="metric-value">{value}</div><p>{detail}</p>{progress !== undefined && <div className="progress-track"><span style={{ width: `${Math.min(100, Math.max(0, progress))}%` }} /></div>}</article>
+export default function App() {
+  const [view, setView] = useState<View>('overview')
+  const [orbState, setOrbState] = useState<VisualState>('breathing')
+  const [wakeOpen, setWakeOpen] = useState(false)
+  const [wakeMode, setWakeMode] = useState<WakeMode>('standby')
+  const [workspace, setWorkspace] = useState<Workspace>(readWorkspace)
+  const [goal, setGoal] = useState('')
+  const [criteria, setCriteria] = useState('')
+  const [stepsText, setStepsText] = useState(DEFAULT_STEPS)
+  const [help, setHelp] = useState(false)
+  const [storageAvailable, setStorageAvailable] = useState(true)
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(workspace))
+      setStorageAvailable(true)
+    } catch {
+      setStorageAvailable(false)
+    }
+  }, [workspace])
+
+  const completed = useMemo(
+    () => workspace.missions.reduce((count, mission) =>
+      count + mission.steps.filter(step => step.done).length, 0),
+    [workspace.missions]
+  )
+  const totalSteps = useMemo(
+    () => workspace.missions.reduce((count, mission) => count + mission.steps.length, 0),
+    [workspace.missions]
+  )
+
+  function createMission(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    const title = goal.trim()
+    const lines = stepsText.split('\n').map(line => line.trim()).filter(Boolean)
+    if (!title || !criteria.trim() || lines.length === 0) return
+    const mission: Mission = {
+      id: uniqueId(),
+      title: title.slice(0, 160),
+      criteria: criteria.trim().slice(0, 400),
+      steps: lines.slice(0, 8).map(label => ({
+        id: uniqueId(),
+        label: label.slice(0, 160),
+        done: false,
+      })),
+      createdAt: new Date().toISOString(),
+    }
+    setWorkspace(previous => ({
+      missions: [mission, ...previous.missions].slice(0, 30),
+      events: [{
+        id: uniqueId(),
+        message: 'Created local mission: ' + mission.title,
+        createdAt: new Date().toISOString(),
+      }, ...previous.events].slice(0, 40),
+    }))
+    setGoal('')
+    setCriteria('')
+    setStepsText(DEFAULT_STEPS)
+  }
+
+  function toggleStep(missionId: string, stepId: string) {
+    const mission = workspace.missions.find(item => item.id === missionId)
+    const step = mission?.steps.find(item => item.id === stepId)
+    if (!mission || !step) return
+    setWorkspace(previous => ({
+      missions: previous.missions.map(item => item.id === missionId ? {
+        ...item,
+        steps: item.steps.map(entry => entry.id === stepId
+          ? { ...entry, done: !entry.done } : entry),
+      } : item),
+      events: [{
+        id: uniqueId(),
+        message: (step.done ? 'Reopened: ' : 'Manually checked: ') + step.label,
+        createdAt: new Date().toISOString(),
+      }, ...previous.events].slice(0, 40),
+    }))
+  }
+
+  function deleteMission(missionId: string) {
+    const mission = workspace.missions.find(item => item.id === missionId)
+    if (!mission) return
+    setWorkspace(previous => ({
+      missions: previous.missions.filter(item => item.id !== missionId),
+      events: [{
+        id: uniqueId(),
+        message: 'Removed local mission: ' + mission.title,
+        createdAt: new Date().toISOString(),
+      }, ...previous.events].slice(0, 40),
+    }))
+  }
+
+  function resetWorkspace() {
+    if (!window.confirm('Delete all missions and activity stored in this browser?')) return
+    setWorkspace({ missions: [], events: [] })
+    setGoal('')
+    setCriteria('')
+    setStepsText(DEFAULT_STEPS)
+    setOrbState('breathing')
+    setView('overview')
+  }
+
+  function openWake() {
+    setWakeMode('listening')
+    setWakeOpen(true)
+  }
+
+  function closeWake() {
+    setWakeOpen(false)
+    setWakeMode('standby')
+  }
+
+  useEffect(() => {
+    function handleShortcut(event: KeyboardEvent) {
+      if (event.altKey && event.key.toLowerCase() === 'f' &&
+        !event.ctrlKey && !event.metaKey && !event.repeat) {
+        event.preventDefault()
+        setWakeMode('listening')
+        setWakeOpen(true)
+      }
+    }
+    window.addEventListener('keydown', handleShortcut)
+    return () => window.removeEventListener('keydown', handleShortcut)
+  }, [])
+
+  const nav: { id: View; title: string; icon: typeof Activity }[] = [
+    { id: 'overview', title: 'Overview', icon: Activity },
+    { id: 'missions', title: 'Mission planner', icon: ClipboardList },
+    { id: 'activity', title: 'Activity log', icon: Clock3 },
+  ]
+  const orbDescription = previews.find(item => item.state === orbState)?.description || 'Visual preview'
+
+  return (
+    <div className="shell">
+      <aside className="sidebar">
+        <button className="brand brand-button" onClick={() => setView('overview')} aria-label="FRIDAY home">
+          <span className="brand-icon"><Bot size={25} /></span> FRIDAY <em>OS</em>
+        </button>
+        <p className="nav-label">MISSION CONTROL</p>
+        <nav aria-label="Primary navigation">
+          {nav.map(item => (
+            <button key={item.id} onClick={() => setView(item.id)}
+              aria-current={view === item.id ? 'page' : undefined}
+              className={'nav-item ' + (view === item.id ? 'selected' : '')}>
+              <item.icon size={18} /> {item.title}
+            </button>
+          ))}
+        </nav>
+        <div className="side-foot">
+          <div><ShieldCheck size={17} /> LOCAL / INTERFACE ONLY</div>
+          <p>Nothing here connects to LiveKit, an AI model, or a backend service.</p>
+          <p>{storageAvailable ? 'Your missions are saved in this browser.' : 'Browser storage unavailable: changes are temporary.'}</p>
+        </div>
+      </aside>
+
+      <main className="main">
+        <header className="topbar">
+          <div className="breadcrumb">FRIDAY <span>/</span> Mission Control <span>/</span> {view === 'overview' ? 'Overview' : view === 'missions' ? 'Missions' : 'Activity'}</div>
+          <div className="top-actions">
+            <button className="wake-top-launch" onClick={openWake} aria-label="Open FRIDAY wake orb demo"><Sparkles size={16} /> Wake orb</button>
+            <span className="connect online"><span className="dot" /> STANDALONE PREVIEW</span>
+            <button className="icon-button" onClick={() => setHelp(value => !value)}
+              aria-label="About standalone mode" aria-expanded={help}><Info size={18} /></button>
+          </div>
+        </header>
+
+        {help && (
+          <div className="help-banner" role="status">
+            This is an interactive frontend prototype. The orb states are manually selected
+            visual previews, mission checkboxes are local notes, and no AI inference or
+            audio processing occurs. No network requests are made by the application.
+          </div>
+        )}
+
+        {view === 'overview' && (
+          <>
+            <div className="intro">
+              <span className="eyebrow">INTERFACE SANDBOX / FRIDAY OS 2</span>
+              <h1>Mission Control<span className="aqua">.</span></h1>
+              <p>A command center designed for an intelligent future. Explore the interface offline.</p>
+            </div>
+            <section className="hero" aria-label="FRIDAY design preview">
+              <BorderBeam size="md" colorVariant="ocean" strength={0.65} active={orbState !== 'breathing'}>
+                <div className="core panel">
+                  <div className="overline"><span className="dot" /> CORE VISUALIZER / PREVIEW ONLY</div>
+                  <div className="orb-stage"><ThinkingOrb state={orbState} size={64} /></div>
+                  <MetalText font="600 26px/1.2 Inter" color="#E7F8FF">FRIDAY</MetalText>
+                  <h2>{orbState === 'breathing' ? 'STANDBY' : orbState === 'working' ? 'ACTIVE PREVIEW' : 'THINKING PREVIEW'}</h2>
+                  <p>{orbDescription} · No microphone or AI connected</p>
+                  <button className="wake-main-launch" onClick={openWake}>
+                    <Sparkles size={17} /> Simulate "Hey FRIDAY" <ArrowUpRight size={16} />
+                  </button>
+                  <div className="wake-hint">Siri-inspired full-screen wake experience · Touch or Alt+F</div>
+                  <div className="preview-switch" role="group" aria-label="Visualizer preview state">
+                    {previews.map(item => <button key={item.state}
+                      aria-pressed={orbState === item.state}
+                      className={'preview-button ' + (orbState === item.state ? 'active' : '')}
+                      onClick={() => setOrbState(item.state)}>{item.label}</button>)}
+                  </div>
+                  <div className="core-bottom">
+                    <span>ENGINE <b>NOT CONNECTED</b></span>
+                    <span>MODE <b>LOCAL INTERFACE</b></span>
+                  </div>
+                </div>
+              </BorderBeam>
+              <article className="mission panel">
+                <div className="panel-title"><span><Zap size={17} /> MISSION DESIGN</span><span className="tag">OFFLINE</span></div>
+                <h2>Prepare before you execute.</h2>
+                <p>Shape your next task into clear steps, define what success looks like,
+                  and track your progress manually. AI automation remains disconnected.</p>
+                <div className="steps">
+                  <div><span>01</span><section><b>DEFINE</b><small>Set a precise outcome</small></section></div>
+                  <div><span>02</span><section><b>PLAN</b><small>Write actionable steps</small></section></div>
+                  <div><span>03</span><section><b>REVIEW</b><small>Tick off steps yourself</small></section></div>
+                </div>
+                <MetalFx preset="silver" strength={0.6}>
+                  <button className="metal-action" onClick={() => setView('missions')}>
+                    Open mission planner <ArrowRight size={17}/>
+                  </button>
+                </MetalFx>
+              </article>
+            </section>
+            <section className="stats" aria-label="Local workspace summary">
+              <Stat title="LOCAL MISSIONS" value={String(workspace.missions.length)} detail="Saved in this browser" icon={Layers3}/>
+              <Stat title="STEPS CHECKED" value={String(completed)} detail="Manually completed" icon={CheckCircle2}/>
+              <Stat title="STEPS REMAINING" value={String(totalSteps - completed)} detail="Not yet checked" icon={ListChecks}/>
+              <Stat title="AI / API CALLS" value="0" detail="No model or service attached" icon={Cpu}/>
+            </section>
+            <section className="activity panel">
+              <header className="activity-heading">
+                <div><span className="eyebrow">YOUR WORKSPACE</span><h2>Recent actions</h2></div>
+                <button className="quiet-action" onClick={() => setView('activity')}>View all <ArrowUpRight size={15}/></button>
+              </header>
+              <ActivityFeed entries={workspace.events.slice(0, 4)} />
+            </section>
+          </>
+        )}
+
+        {view === 'missions' && (
+          <>
+            <div className="intro">
+              <span className="eyebrow">WORKSPACE / MANUAL PLANNING</span>
+              <h1>Mission planner<span className="aqua">.</span></h1>
+              <p>Create and organize tasks locally. FRIDAY will not run or verify them.</p>
+            </div>
+            <section className="planner-layout">
+              <form className="planner-form panel" onSubmit={createMission}>
+                <div className="panel-title"><span><Plus size={17}/> NEW MISSION</span><span className="tag">LOCAL</span></div>
+                <label htmlFor="goal">Objective</label>
+                <input id="goal" value={goal} maxLength={160} required
+                  onChange={event => setGoal(event.target.value)}
+                  placeholder="e.g. Design a faster FRIDAY interface"/>
+                <label htmlFor="criteria">Success criteria</label>
+                <textarea id="criteria" value={criteria} maxLength={400} required rows={3}
+                  onChange={event => setCriteria(event.target.value)}
+                  placeholder="What must be true when this mission is complete?"/>
+                <label htmlFor="steps">Steps <small>(one per line, max 8)</small></label>
+                <textarea id="steps" value={stepsText} rows={6} required
+                  onChange={event => setStepsText(event.target.value)}
+                  placeholder="Write one task per line"/>
+                <p className="form-note">These are your own notes—not AI-generated instructions.</p>
+                <MetalFx preset="silver" strength={0.6}>
+                  <button className="metal-action" type="submit"><Plus size={17}/> Create local mission</button>
+                </MetalFx>
+              </form>
+              <div className="mission-list">
+                <div className="list-head"><h2>My missions</h2><span>{workspace.missions.length} saved</span></div>
+                {workspace.missions.length === 0 ? (
+                  <div className="empty-card panel">
+                    <ClipboardList size={30}/>
+                    <h3>Start with a goal.</h3>
+                    <p>Use the form to create your first mission and track its steps.</p>
+                  </div>
+                ) : workspace.missions.map(mission => {
+                  const done = mission.steps.filter(step => step.done).length
+                  return (
+                    <article className="mission-card panel" key={mission.id}>
+                      <div className="mission-card-top">
+                        <div><span className="eyebrow">LOCAL MISSION</span><h3>{mission.title}</h3></div>
+                        <button className="icon-button danger-button"
+                          title="Remove mission" aria-label={'Remove ' + mission.title}
+                          onClick={() => deleteMission(mission.id)}><Trash2 size={17}/></button>
+                      </div>
+                      <div className="mission-criteria"><ShieldCheck size={16}/> {mission.criteria}</div>
+                      <div className="progress-top"><span>Manually checked steps</span><strong>{done} / {mission.steps.length}</strong></div>
+                      <div className="progress-track"><span style={{ width: String(done / mission.steps.length * 100) + '%' }}/></div>
+                      <div className="mission-tasks">
+                        {mission.steps.map(step => (
+                          <label key={step.id} className={'task-row ' + (step.done ? 'checked' : '')}>
+                            <input type="checkbox" checked={step.done}
+                              onChange={() => toggleStep(mission.id, step.id)}/>
+                            <span>{step.done ? <Check size={15} /> : null}</span>
+                            <span>{step.label}</span>
+                          </label>
+                        ))}
+                      </div>
+                      <small>Created {shortTime(mission.createdAt)} · Manual checkmarks are not automated verification.</small>
+                    </article>
+                  )
+                })}
+              </div>
+            </section>
+          </>
+        )}
+
+        {view === 'activity' && (
+          <>
+            <div className="intro">
+              <span className="eyebrow">WORKSPACE / LOCAL HISTORY</span>
+              <h1>Activity log<span className="aqua">.</span></h1>
+              <p>Only actions you perform in this interface appear here.</p>
+            </div>
+            <section className="activity panel">
+              <header className="activity-heading">
+                <div><span className="eyebrow">BROWSER HISTORY</span><h2>Recent local changes</h2></div>
+                <button className="quiet-action" disabled={!workspace.events.length}
+                  onClick={() => setWorkspace(previous => ({ ...previous, events: [] }))}>Clear log <Trash2 size={15}/></button>
+              </header>
+              <ActivityFeed entries={workspace.events}/>
+            </section>
+            <div className="reset-row">
+              <span><Info size={16}/> All data stays in this browser. There is no backend sync.</span>
+              <button className="reset-button" onClick={resetWorkspace}><RotateCcw size={16}/> Reset workspace</button>
+            </div>
+          </>
+        )}
+
+        <footer>
+          <span>FRIDAY / STANDALONE INTERFACE · NO LIVEKIT / NO AI CONNECTION</span>
+          <a href="https://libraries.dev/" target="_blank" rel="noreferrer">
+            Visual effects by Libraries.dev <ArrowUpRight size={14}/>
+          </a>
+        </footer>
+      </main>
+      {wakeOpen && <WakeOrb mode={wakeMode} onModeChange={setWakeMode} onClose={closeWake} />}
+    </div>
+  )
 }
-function OverviewRow({ icon, label, value, status, warn }: { icon: React.ReactNode; label: string; value: string; status?: boolean; warn?: boolean }) {
-  return <div className="overview-row"><span className="row-icon">{icon}</span><span className="row-label">{label}</span><strong className={warn ? 'value-warn' : status === undefined ? '' : status ? 'value-good' : 'value-offline'}>{value}</strong></div>
+
+function ActivityFeed({ entries }: { entries: LocalEvent[] }) {
+  if (!entries.length) {
+    return <div className="empty"><Sparkles size={19}/> No actions yet. Create a mission to begin.</div>
+  }
+  return (
+    <ul className="event-list">
+      {entries.map(event => (
+        <li key={event.id}>
+          <span className="mark" aria-hidden="true"/>
+          <div><b>{event.message}</b><small>Local interaction</small></div>
+          <time>{shortTime(event.createdAt)}</time>
+        </li>
+      ))}
+    </ul>
+  )
 }
-export default App

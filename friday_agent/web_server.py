@@ -1,19 +1,21 @@
-"""HTTP and WebSocket server for the FRIDAY dashboard."""
+"""Web server providing real-time dashboard and metrics for FRIDAY UI."""
 
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 import os
-from contextlib import asynccontextmanager
+from urllib.parse import urlsplit
 from pathlib import Path
+from contextlib import asynccontextmanager
 from typing import Any
 
-import uvicorn
 from fastapi import FastAPI, HTTPException, Query, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+import uvicorn
 
 from friday_agent.config import config
 from friday_agent.observability import metrics, telemetry
@@ -24,27 +26,32 @@ WEB_DIST = Path(__file__).resolve().parents[1] / "web" / "dist"
 
 
 class ConnectionManager:
-    """Manage WebSocket clients without allowing stale sockets to break broadcasts."""
+    """Manage WebSocket connections for real-time dashboard updates."""
 
     def __init__(self) -> None:
         self.active_connections: list[WebSocket] = []
 
     async def connect(self, websocket: WebSocket) -> None:
+        """Register new WebSocket connection."""
         await websocket.accept()
         self.active_connections.append(websocket)
         metrics.update_connections(len(self.active_connections))
         logger.info("WebSocket client connected. Total connections: %d", len(self.active_connections))
 
     def disconnect(self, websocket: WebSocket) -> None:
+        """Unregister closed WebSocket connection."""
         if websocket in self.active_connections:
             self.active_connections.remove(websocket)
             metrics.update_connections(len(self.active_connections))
-            logger.info("WebSocket client disconnected. Total connections: %d", len(self.active_connections))
+        logger.info("WebSocket client disconnected. Total connections: %d", len(self.active_connections))
 
     async def broadcast(self, message: dict[str, Any]) -> None:
-        connections = tuple(self.active_connections)
-        if not connections:
+        """Broadcast message to all connected clients."""
+        if not self.active_connections:
             return
+
+        # A slow dashboard client must not stall other sessions.
+        connections = tuple(self.active_connections)
 
         async def send(connection: WebSocket) -> bool:
             try:
@@ -64,50 +71,44 @@ manager = ConnectionManager()
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
-    """Start and stop the lightweight telemetry broadcast task."""
+async def lifespan(app: FastAPI):  # type: ignore
+    """Handle startup and shutdown events."""
     logger.info("Starting FRIDAY Web Server (port 8001)")
+    # Start metrics collection task
     metrics_task = asyncio.create_task(_metrics_broadcast_loop())
+    yield
+    logger.info("Shutting down FRIDAY Web Server")
+    metrics_task.cancel()
     try:
-        yield
-    finally:
-        logger.info("Shutting down FRIDAY Web Server")
-        metrics_task.cancel()
-        try:
-            await metrics_task
-        except asyncio.CancelledError:
-            pass
+        await metrics_task
+    except asyncio.CancelledError:
+        pass
 
 
 app = FastAPI(
     title="FRIDAY AI Agent",
-    description="Realtime dashboard API for FRIDAY",
-    version="1.1.0",
+    description="Real-time dashboard for FRIDAY personal assistant",
+    version="1.0.0",
     lifespan=lifespan,
 )
 
-# Same-origin deployment needs no CORS. For split-origin deployments, explicitly
-# list trusted origins in FRIDAY_CORS_ORIGINS (comma-separated).
-cors_origins = [
-    origin.strip()
-    for origin in os.getenv(
-        "FRIDAY_CORS_ORIGINS",
-        "http://localhost:3000,http://127.0.0.1:3000",
-    ).split(",")
-    if origin.strip()
+# Same-origin by default; add specific origins only for trusted clients.
+CORS_ORIGINS = [
+    item.strip() for item in os.getenv("FRIDAY_CORS_ORIGINS", "").split(",")
+    if item.strip()
 ]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=cors_origins,
+    allow_origins=CORS_ORIGINS,
     allow_credentials=False,
-    allow_methods=["GET", "OPTIONS"],
-    allow_headers=["Accept", "Content-Type"],
+    allow_methods=["GET"],
+    allow_headers=[],
 )
 
 
 @app.get("/healthz", tags=["health"])
 async def health_check() -> dict[str, str]:
-    """Return a lightweight liveness signal without exposing runtime details."""
+    """Public liveness response without secrets or metrics."""
     return {"status": "ok"}
 
 
@@ -129,31 +130,38 @@ async def get_metrics() -> dict[str, Any]:
 
 @app.get("/api/events")
 async def get_recent_events(limit: int = Query(default=50, ge=1, le=100)) -> list[dict[str, Any]]:
-    """Get a bounded page of recent system events."""
+    """Get recent system events."""
     return telemetry.get_recent_events(limit)
 
 
 @app.websocket("/ws/metrics")
 async def websocket_metrics(websocket: WebSocket) -> None:
-    """Keep a dashboard socket alive and respond to client heartbeats."""
+    """WebSocket endpoint for real-time metrics streaming."""
+    origin = websocket.headers.get("origin")
+    if origin:
+        request_origin = urlsplit(origin)
+        if request_origin.netloc != websocket.headers.get("host") and origin not in CORS_ORIGINS:
+            await websocket.close(code=1008, reason="Untrusted WebSocket origin")
+            return
     await manager.connect(websocket)
     try:
         while True:
+            # Keep connection alive and receive heartbeat
             data = await websocket.receive_text()
             if data == "ping":
                 await websocket.send_json({"type": "pong"})
     except WebSocketDisconnect:
         manager.disconnect(websocket)
-    except Exception:
-        logger.exception("WebSocket error")
+    except Exception as exc:
+        logger.error("WebSocket error: %s", exc)
         manager.disconnect(websocket)
 
 
 async def _metrics_broadcast_loop() -> None:
-    """Broadcast telemetry without letting a slow client stall all other clients."""
+    """Continuously broadcast metrics to connected clients."""
     while True:
         try:
-            await asyncio.sleep(1.0)
+            await asyncio.sleep(0.5)  # Update every 500ms
             current_metrics = metrics.get_current_metrics()
             await manager.broadcast(
                 {
@@ -164,26 +172,23 @@ async def _metrics_broadcast_loop() -> None:
             )
         except asyncio.CancelledError:
             break
-        except Exception:
-            logger.exception("Error in metrics broadcast loop")
+        except Exception as exc:
+            logger.error("Error in metrics broadcast loop: %s", exc)
 
 
 @app.get("/")
 async def serve_index() -> FileResponse:
-    """Serve the compiled dashboard, with an actionable error before the first build."""
+    """Serve the web UI index."""
     index = WEB_DIST / "index.html"
     if not index.is_file():
-        raise HTTPException(
-            status_code=503,
-            detail="FRIDAY dashboard is not built. Run 'cd web && npm install && npm run build'.",
-        )
+        raise HTTPException(status_code=503, detail="FRIDAY dashboard is not built")
     return FileResponse(index)
 
 
-if WEB_DIST.is_dir():
+try:
     app.mount("/", StaticFiles(directory=str(WEB_DIST), html=True), name="static")
-else:
-    logger.info("Dashboard build not present; API-only mode enabled until web/dist is built")
+except RuntimeError:
+    logger.warning("Web UI dist directory not found; static files not mounted")
 
 
 if __name__ == "__main__":
