@@ -7,10 +7,11 @@ import json
 import logging
 import os
 from urllib.parse import urlsplit
+from pathlib import Path
 from contextlib import asynccontextmanager
 from typing import Any
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, HTTPException, Query, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -21,6 +22,7 @@ from friday_agent.observability import metrics, telemetry
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 logger = logging.getLogger("friday_agent.web_server")
+WEB_DIST = Path(__file__).resolve().parents[1] / "web" / "dist"
 
 
 class ConnectionManager:
@@ -33,12 +35,14 @@ class ConnectionManager:
         """Register new WebSocket connection."""
         await websocket.accept()
         self.active_connections.append(websocket)
+        metrics.update_connections(len(self.active_connections))
         logger.info("WebSocket client connected. Total connections: %d", len(self.active_connections))
 
     def disconnect(self, websocket: WebSocket) -> None:
         """Unregister closed WebSocket connection."""
         if websocket in self.active_connections:
             self.active_connections.remove(websocket)
+            metrics.update_connections(len(self.active_connections))
         logger.info("WebSocket client disconnected. Total connections: %d", len(self.active_connections))
 
     async def broadcast(self, message: dict[str, Any]) -> None:
@@ -46,16 +50,21 @@ class ConnectionManager:
         if not self.active_connections:
             return
 
-        disconnected = []
-        for connection in self.active_connections:
-            try:
-                await connection.send_json(message)
-            except Exception as exc:
-                logger.warning("Failed to send WebSocket message: %s", exc)
-                disconnected.append(connection)
+        # A slow dashboard client must not stall other sessions.
+        connections = tuple(self.active_connections)
 
-        for connection in disconnected:
-            self.disconnect(connection)
+        async def send(connection: WebSocket) -> bool:
+            try:
+                await asyncio.wait_for(connection.send_json(message), timeout=1.0)
+                return True
+            except Exception as exc:
+                logger.debug("Dropping unresponsive WebSocket client: %s", exc)
+                return False
+
+        results = await asyncio.gather(*(send(connection) for connection in connections))
+        for connection, sent in zip(connections, results):
+            if not sent:
+                self.disconnect(connection)
 
 
 manager = ConnectionManager()
@@ -97,6 +106,12 @@ app.add_middleware(
 )
 
 
+@app.get("/healthz", tags=["health"])
+async def health_check() -> dict[str, str]:
+    """Public liveness response without secrets or metrics."""
+    return {"status": "ok"}
+
+
 @app.get("/api/status")
 async def get_status() -> dict[str, Any]:
     """Get current FRIDAY system status."""
@@ -114,7 +129,7 @@ async def get_metrics() -> dict[str, Any]:
 
 
 @app.get("/api/events")
-async def get_recent_events(limit: int = 50) -> list[dict[str, Any]]:
+async def get_recent_events(limit: int = Query(default=50, ge=1, le=100)) -> list[dict[str, Any]]:
     """Get recent system events."""
     return telemetry.get_recent_events(limit)
 
@@ -164,11 +179,14 @@ async def _metrics_broadcast_loop() -> None:
 @app.get("/")
 async def serve_index() -> FileResponse:
     """Serve the web UI index."""
-    return FileResponse("web/dist/index.html")
+    index = WEB_DIST / "index.html"
+    if not index.is_file():
+        raise HTTPException(status_code=503, detail="FRIDAY dashboard is not built")
+    return FileResponse(index)
 
 
 try:
-    app.mount("/", StaticFiles(directory="web/dist", html=True), name="static")
+    app.mount("/", StaticFiles(directory=str(WEB_DIST), html=True), name="static")
 except RuntimeError:
     logger.warning("Web UI dist directory not found; static files not mounted")
 
