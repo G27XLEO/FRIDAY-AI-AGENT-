@@ -239,3 +239,67 @@ def plan_task(goal: str, constraints: list[str] | None = None) -> ToolResult:
         "Summarize outcome, risks, and next steps",
     ]
     return ToolResult(True, json.dumps({"goal": goal, "constraints": constraints, "steps": steps}, indent=2), {})
+
+
+async def _fetch_rss_feeds(feeds: list[str], limit: int = 12) -> list[dict[str, str]]:
+    """Fetch several RSS feeds concurrently and return normalized headline data."""
+    import re
+    import xml.etree.ElementTree as ET
+    import httpx
+
+    async def fetch_one(client: httpx.AsyncClient, url: str) -> list[dict[str, str]]:
+        try:
+            response = await client.get(url, headers={"User-Agent": "FRIDAY-AI/1.0"})
+            response.raise_for_status()
+            root = ET.fromstring(response.content)
+            items = []
+            for item in root.findall(".//item")[:5]:
+                title = item.findtext("title") or ""
+                description = re.sub(r"<[^>]+>", "", item.findtext("description") or "").strip()
+                link = item.findtext("link") or ""
+                items.append({
+                    "source": url.split("/")[2],
+                    "title": title,
+                    "summary": description[:240],
+                    "link": link,
+                })
+            return items
+        except Exception as exc:
+            logger.debug("RSS feed failed: %s (%s)", url, exc)
+            return []
+
+    async with httpx.AsyncClient(follow_redirects=True, timeout=8.0) as client:
+        results = await asyncio.gather(*(fetch_one(client, url) for url in feeds))
+    return [item for group in results for item in group][:limit]
+
+
+async def get_world_news() -> ToolResult:
+    """Return a compact live global-news briefing from public RSS feeds."""
+    feeds = [
+        "https://feeds.bbci.co.uk/news/world/rss.xml",
+        "https://rss.nytimes.com/services/xml/rss/nyt/World.xml",
+        "https://www.aljazeera.com/xml/rss/all.xml",
+    ]
+    articles = await _fetch_rss_feeds(feeds)
+    if not articles:
+        return ToolResult(False, "Global news feeds are unavailable.", {"feed_count": len(feeds)})
+    lines = ["GLOBAL NEWS BRIEFING"]
+    for item in articles:
+        lines.append(f"[{item['source']}] {item['title']} — {item['summary']} {item['link']}")
+    return ToolResult(True, "\n".join(lines), {"articles": len(articles)})
+
+
+async def get_world_finance_news() -> ToolResult:
+    """Return a compact live finance briefing from public RSS feeds."""
+    feeds = [
+        "https://www.cnbc.com/id/100003114/device/rss/rss.html",
+        "https://feeds.marketwatch.com/marketwatch/topstories/",
+        "https://rss.nytimes.com/services/xml/rss/nyt/Business.xml",
+    ]
+    articles = await _fetch_rss_feeds(feeds)
+    if not articles:
+        return ToolResult(False, "Finance news feeds are unavailable.", {"feed_count": len(feeds)})
+    lines = ["FINANCE BRIEFING"]
+    for item in articles:
+        lines.append(f"[{item['source']}] {item['title']} — {item['summary']} {item['link']}")
+    return ToolResult(True, "\n".join(lines), {"articles": len(articles)})
