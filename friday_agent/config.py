@@ -1,8 +1,14 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import os
+from pathlib import Path
 from urllib.parse import parse_qs, urlparse
+
+from dotenv import load_dotenv
+
+# Load only this checkout's .env; deployment environment values take precedence.
+load_dotenv(Path(__file__).resolve().parents[1] / ".env", override=False)
 
 
 def _elevenlabs_voice_id(value: str) -> str:
@@ -33,8 +39,8 @@ def _elevenlabs_voice_id(value: str) -> str:
 class FridayConfig:
     """Runtime configuration for the realtime assistant."""
 
-    identity: str = os.getenv("FRIDAY_IDENTITY", "friday-ai-agent")
-    instructions: str = os.getenv(
+    identity: str = field(default_factory=lambda: os.getenv("FRIDAY_IDENTITY", "friday-ai-agent"))
+    instructions: str = field(default_factory=lambda: os.getenv(
         "FRIDAY_INSTRUCTIONS",
         (
             "You are FRIDAY, a real-time mission-control AI assistant. "
@@ -44,13 +50,14 @@ class FridayConfig:
             "You can coordinate tools, reason across models, summarize findings, write code, "
             "and ask short clarifying questions only when truly blocked."
         ),
-    )
-    groq_llm_model: str = os.getenv("GROQ_LLM_MODEL", "llama-3.3-70b-versatile")
-    groq_stt_model: str = os.getenv("GROQ_STT_MODEL", "whisper-large-v3-turbo")
-    elevenlabs_voice: str = os.getenv(
-        "ELEVENLABS_VOICE_LINK",
-        os.getenv("ELEVENLABS_VOICE_ID", ""),
-    )
+    ))
+    groq_llm_model: str = field(default_factory=lambda: os.getenv("GROQ_LLM_MODEL", "llama-3.3-70b-versatile"))
+    groq_stt_model: str = field(default_factory=lambda: os.getenv("GROQ_STT_MODEL", "whisper-large-v3-turbo"))
+    elevenlabs_voice: str = field(default_factory=lambda: (
+        os.getenv("ELEVENLABS_VOICE_LINK", "").strip()
+        or os.getenv("ELEVENLABS_VOICE_ID", "").strip()
+    ))
+    elevenlabs_model: str = field(default_factory=lambda: os.getenv("ELEVENLABS_TTS_MODEL", "eleven_flash_v2_5"))
 
     @property
     def elevenlabs_voice_id(self) -> str:

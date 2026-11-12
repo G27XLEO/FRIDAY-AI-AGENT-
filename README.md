@@ -225,6 +225,20 @@ If a native Python dependency is unavailable on a particular Android/Termux buil
 
 ## Start FRIDAY
 
+For a complete LiveKit, Groq and ElevenLabs setup, credential checks, and your
+first voice conversation, follow [Voice setup](docs/VOICE_SETUP.md).
+
+```bash
+bash scripts/setup_voice.sh
+# Fill in the generated .env, then:
+source .venv/bin/activate
+python -m friday_agent.doctor
+./start-friday.sh
+```
+
+The dashboard is a standalone visual demo. Use local console mode or the LiveKit
+Agents Playground for a real voice conversation, as described in the guide.
+
 ### MCP server
 
 ```bash
