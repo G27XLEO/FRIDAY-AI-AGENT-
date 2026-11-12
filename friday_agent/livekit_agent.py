@@ -1,14 +1,18 @@
 """Realtime FRIDAY voice worker with bounded, observable mission tools."""
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
+import os
+import sys
 from pathlib import PurePosixPath
 
-from livekit.agents import Agent, AgentSession, JobContext, RunContext, WorkerOptions, cli, function_tool
-from livekit.plugins import elevenlabs, groq, silero, turn_detector
+from livekit.agents import Agent, AgentSession, JobContext, JobProcess, RunContext, WorkerOptions, cli, function_tool, inference
+from livekit.plugins import elevenlabs, groq, silero
 
 from friday_agent.config import config
+from friday_agent.doctor import require_voice_configuration
 from friday_agent import mcp_tools
 from friday_agent.mission_control import MissionControl
 from friday_agent.nlp import analyze
@@ -146,19 +150,50 @@ class FridayAgent(Agent):
         await super().on_user_turn_completed(turn_ctx, new_message)
 
 
+def prewarm(proc: JobProcess) -> None:
+    """Load VAD once per worker process instead of during the first user turn."""
+    proc.userdata["vad"] = silero.VAD.load()
+
+
+def create_session(vad) -> AgentSession:
+    """Use direct provider keys and local turn detection (no inference gateway)."""
+    # LiveKit's plugin otherwise reads ELEVEN_API_KEY, while FRIDAY documents
+    # ELEVENLABS_API_KEY. Pass the repository's public configuration explicitly.
+    tts_options = {"model": config.elevenlabs_model, "api_key": os.environ["ELEVENLABS_API_KEY"]}
+    # Passing None is not the plugin default: omit voice_id when not selected.
+    if config.elevenlabs_voice_id:
+        tts_options["voice_id"] = config.elevenlabs_voice_id
+    return AgentSession(
+        stt=groq.STT(model=config.groq_stt_model),
+        llm=groq.LLM(model=config.groq_llm_model),
+        tts=elevenlabs.TTS(**tts_options),
+        vad=vad,
+        turn_handling={"turn_detection": inference.TurnDetector(version="v1-mini")},
+    )
+
+
+async def close_session(session: AgentSession) -> None:
+    """Close provider clients even when the session failed before start()."""
+    try:
+        await session.aclose()
+    finally:
+        await asyncio.gather(*(provider.aclose() for provider in (
+            session.stt, session.llm, session.tts
+        ) if provider is not None))
+
+
 async def entrypoint(ctx: JobContext) -> None:
     """Connect to LiveKit and serve a voice session."""
     if not config.elevenlabs_voice_id:
         logger.warning("No ElevenLabs voice selected; using plugin default.")
     await ctx.connect()
     logger.info("Connected to LiveKit room '%s'", ctx.room.name)
-    session = AgentSession(
-        stt=groq.STT(model=config.groq_stt_model),
-        llm=groq.LLM(model=config.groq_llm_model),
-        tts=elevenlabs.TTS(voice_id=config.elevenlabs_voice_id or None),
-        vad=silero.VAD.load(),
-        turn_detection=turn_detector.EOUModel(),
-    )
+    session = create_session(ctx.proc.userdata["vad"])
+
+    async def shutdown() -> None:
+        await close_session(session)
+
+    ctx.add_shutdown_callback(shutdown)
     try:
         await session.start(agent=FridayAgent(), room=ctx.room)
         await session.generate_reply(
@@ -171,4 +206,12 @@ async def entrypoint(ctx: JobContext) -> None:
 
 
 if __name__ == "__main__":
-    cli.run_app(WorkerOptions(entrypoint_fnc=entrypoint, agent_name=config.identity))
+    # Downloads and CLI help must work before credentials are configured.
+    if len(sys.argv) > 1 and sys.argv[1] in {"start", "dev", "connect", "console"} and not any(
+        flag in sys.argv for flag in ("--help", "-h")
+    ):
+        try:
+            require_voice_configuration(console=sys.argv[1] == "console")
+        except ValueError as exc:
+            raise SystemExit(str(exc)) from None
+    cli.run_app(WorkerOptions(entrypoint_fnc=entrypoint, prewarm_fnc=prewarm, agent_name=config.identity))

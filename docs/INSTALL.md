@@ -161,3 +161,8 @@ Optional model/voice variables are documented in `.env.example`.
 ## Client platforms
 
 Web, Android, iOS, and desktop clients can be built separately around the LiveKit connection. This repository provides the reusable FRIDAY worker and MCP runtime rather than pretending to be a native application for every client OS.
+
+## Voice service setup
+
+For LiveKit project credentials, Groq, ElevenLabs, offline checks, and a first
+conversation, see [Voice setup](VOICE_SETUP.md).
